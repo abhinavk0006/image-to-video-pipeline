@@ -56,3 +56,5 @@ To run the **14B Image-to-Video** model without crashing under standard hardware
 1. **Lazy Weights Loading**: High-noise and low-noise models are loaded sequentially on demand rather than all at startup.
 2. **CPU-to-GPU Memory Unloading**: The inactive model is explicitly offloaded back to the CPU and garbage collected before the active model is loaded, keeping memory overhead within physical RAM boundaries.
 3. **Low-Precision Execution**: Models are converted to `bfloat16` and run with `offload_model=True` to minimize VRAM footprint.
+
+For the 14B page-replacement setup on a 48GB GPU, the wrapper keeps T5 on GPU and only uses --offload_model True for the main diffusion path. That matches the intended GPU-accelerated encoding flow and avoids forcing the text encoder onto CPU.
