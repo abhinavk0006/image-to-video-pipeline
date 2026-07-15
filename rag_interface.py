@@ -96,7 +96,10 @@ Use 3-6 clips. Only clip_1 gets an image_prompt, all others use null."""
 
 
 def store(experiment: dict) -> Path:
-    name = experiment.get("experiment_name", "unknown")
+    name = experiment.get("name") or experiment.get("experiment_name", "unknown")
+    experiment["name"] = name
+    if "experiment_name" not in experiment:
+        experiment["experiment_name"] = name
     slug = name.lower().replace(" ", "_").replace("/", "_")
     path = KNOWLEDGE_DIR / f"{slug}.json"
     path.write_text(json.dumps(experiment, indent=2))
