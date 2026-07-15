@@ -9,11 +9,13 @@ This script verifies the earliest safe test boundary:
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from config import PipelineConfig
 from knowledge_loader import load_experiment_from_json
 from pipeline import ExperimentPipeline, ManualImageRequiredError
+from rag_interface import lookup_or_generate
 
 
 def _slugify(value: str) -> str:
@@ -27,8 +29,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run a pipeline smoke test without Wan 2.2.")
     parser.add_argument(
         "--knowledge-file",
-        default=str(Path(__file__).resolve().parent / "knowledge" / "newtons_cradle.json"),
-        help="Path to the manual experiment JSON file.",
+        default=None,
+        help="Path to the experiment JSON file. Optional if --query is provided.",
+    )
+    parser.add_argument(
+        "--query",
+        default=None,
+        help="Natural-language experiment query. When provided, a RAG miss will generate the knowledge JSON automatically.",
     )
     parser.add_argument(
         "--output-dir",
@@ -47,10 +54,26 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    knowledge_path = Path(args.knowledge_file)
-    if not knowledge_path.exists():
-        print(f"FAIL: knowledge file not found: {knowledge_path}")
-        return 1
+    knowledge_path = None
+
+    if args.query:
+        experiment_data = lookup_or_generate(args.query)
+        knowledge_dir = Path(args.output_dir) / "knowledge"
+        knowledge_dir.mkdir(parents=True, exist_ok=True)
+        generated_name = str(experiment_data.get("experiment_name", "experiment"))
+        experiment_name = args.experiment_name or _slugify(generated_name)
+        knowledge_path = knowledge_dir / f"{experiment_name}.json"
+        if not knowledge_path.exists():
+            knowledge_path.write_text(json.dumps(experiment_data, indent=2), encoding="utf-8")
+    else:
+        if not args.knowledge_file:
+            print("FAIL: provide either --knowledge-file or --query")
+            return 1
+
+        knowledge_path = Path(args.knowledge_file)
+        if not knowledge_path.exists():
+            print(f"FAIL: knowledge file not found: {knowledge_path}")
+            return 1
 
     experiment = load_experiment_from_json(str(knowledge_path))
     experiment_name = args.experiment_name or _slugify(experiment.name)
