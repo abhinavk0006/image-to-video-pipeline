@@ -44,7 +44,7 @@ WAN_PRESETS: dict[str, WanPreset] = {
         size="832*480",
         model_dir_name="Wan2.2-I2V-A14B",
         sample_fps=16,
-        extra_flags=["--offload_model", "True"],
+        extra_flags=["--offload_model", "True", "--t5_cpu"],
     ),
     "ti2v-5b": WanPreset(
         task="ti2v-5B",
