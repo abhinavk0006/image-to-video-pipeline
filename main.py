@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from config import PipelineConfig
+from edu_video_rag_adapter import retrieve_pipeline_experiment
 from knowledge_loader import load_experiment_from_json
 from pipeline import ExperimentPipeline, ManualImageRequiredError, PipelineError
 from rag_interface import lookup_or_generate
@@ -33,7 +34,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--query",
         default=None,
-        help="Natural-language experiment query. When provided, a RAG miss will generate the knowledge JSON automatically.",
+        help="Natural-language experiment query. Use --rag-repo-dir to retrieve grounded procedures from Edu-video-gen-dataset.",
     )
     parser.add_argument(
         "--experiment-name",
@@ -92,6 +93,24 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["ti2v-5b", "i2v-a14b"],
         help="Wan model preset used by the local wrapper.",
     )
+    parser.add_argument(
+        "--rag-repo-dir",
+        default=None,
+        help="Path to the Edu-video-gen-dataset checkout. Enables its local TF-IDF RAG prompt builder for --query.",
+    )
+    parser.add_argument("--rag-top-k", type=int, default=1)
+    parser.add_argument(
+        "--rag-max-clips",
+        type=int,
+        default=None,
+        help="Optional limit on retrieved procedure steps (use 1 for an end-to-end preview).",
+    )
+    parser.add_argument(
+        "--rag-clip-duration-seconds",
+        type=float,
+        default=1.0,
+        help="Duration assigned to each retrieved step; 1 second maps to the currently validated 17-frame Wan preview.",
+    )
     return parser
 
 
@@ -102,14 +121,33 @@ def main(argv: list[str] | None = None) -> int:
     knowledge_path = None
 
     if args.query:
-        experiment_data = lookup_or_generate(args.query)
+        if args.rag_repo_dir:
+            experiment_data = retrieve_pipeline_experiment(
+                args.query,
+                args.rag_repo_dir,
+                top_k=args.rag_top_k,
+                clip_duration_seconds=args.rag_clip_duration_seconds,
+                max_clips=args.rag_max_clips,
+            )
+            rag_metadata = experiment_data.get("metadata", {})
+            print(
+                "RAG selected: "
+                f"{experiment_data.get('name', 'unknown')} "
+                f"(score={rag_metadata.get('retrieval_score', 0):.3f}, "
+                f"source status={rag_metadata.get('source_status', 'unspecified')})"
+            )
+        else:
+            experiment_data = lookup_or_generate(args.query)
         knowledge_dir = Path(args.output_dir).parent / args.knowledge_dir
         knowledge_dir.mkdir(parents=True, exist_ok=True)
-        generated_name = str(experiment_data.get("experiment_name", "experiment"))
+        generated_name = str(
+            experiment_data.get("name")
+            or experiment_data.get("experiment_name")
+            or "experiment"
+        )
         experiment_name = args.experiment_name or _slugify(generated_name)
         knowledge_path = knowledge_dir / f"{experiment_name}.json"
-        if not knowledge_path.exists():
-            knowledge_path.write_text(json.dumps(experiment_data, indent=2), encoding="utf-8")
+        knowledge_path.write_text(json.dumps(experiment_data, indent=2), encoding="utf-8")
     else:
         if not args.knowledge_file:
             print("Provide either --knowledge-file or --query.", file=sys.stderr)

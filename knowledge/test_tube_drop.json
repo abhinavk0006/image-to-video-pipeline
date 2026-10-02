@@ -1,0 +1,30 @@
+{
+  "name": "Test Tube Droplet Preview",
+  "description": "A short image-to-video preview of a clear droplet falling into a test tube containing unidentified white crystals.",
+  "subject": "Laboratory demonstration",
+  "educational_goal": "Show a controlled droplet entering a test tube while preserving the starting composition.",
+  "knowledge_source": "manual_json",
+  "clips": [
+    {
+      "name": "droplet_preview",
+      "scene": {
+        "scene": "Macro laboratory view of a clear test tube held by a clamp, with white crystals at the bottom and a pipette above it.",
+        "camera": "Locked-off close macro shot",
+        "lighting": "Soft, neutral laboratory lighting",
+        "objects": ["test tube", "clamp", "pipette", "clear droplet", "white crystals"],
+        "background": "Softly blurred laboratory background"
+      },
+      "prompt_bundle": {
+        "image_prompt": "A locked-off macro laboratory shot of a clear test tube held by a metal clamp. White crystals rest at the bottom. A pipette is positioned above the opening. Preserve the arrangement and framing of the reference image. Realistic glass reflections, soft neutral lighting, no labels or text.",
+        "motion_prompt": "A pipette slowly releases one clear droplet. The droplet falls into the test tube containing white crystals. Keep the test tube, clamp, pipette, crystals, and camera framing in the same positions. Realistic glass reflections, steady camera, natural subtle motion.",
+        "moving_object": "One clear droplet",
+        "direction": "Downward from the pipette into the test tube",
+        "motion": "The pipette releases one droplet which falls into the tube",
+        "constraints": "Keep the test tube, clamp, pipette, crystals, and camera framing stable. Do not identify or change the substance in the tube.",
+        "stop_condition": "The droplet has entered the test tube and the setup remains still",
+        "clip_duration_seconds": 1.0,
+        "negative_prompt": "camera shake, zoom, cuts, extra pipettes, extra tubes, changing clamp, moving crystals, colored liquid, text, labels, distorted glass"
+      }
+    }
+  ]
+}

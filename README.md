@@ -4,13 +4,18 @@ An orchestrator pipeline that generates multi-clip videos from static initial im
 
 Designed to run in resource-constrained cloud environments (e.g., 62GB RAM / 46GB L40S GPU) using memory-efficient execution strategies.
 
+The repository also includes an experimental Kaggle adapter for the two-T4,
+streamed INT8 Wan 2.2 I2V-A14B Lightning runner in the sibling `Wan2.2` repo.
+The adapter connects the pipeline's existing JSON-lines generator interface to
+that runner; it does not make the 14B model suitable for a 2GB laptop GPU.
+
 ---
 
 ## 🚀 Key Features
 
 * **Multi-Clip Visual Continuity**: Decodes and extracts the exact final frame of each video clip to use as the starting frame of the next.
 * **Resume Support**: Interrupted runs automatically skip already generated clips, allowing seamless pipeline recovery.
-* **Persistent Daemon Architecture**: Keeps the heavy generative model resident in a background JSON-RPC daemon process to avoid reloading model parameters between sequential clips.
+* **Generator Daemon Interface**: Reuses a JSON-RPC generator process across sequential clips. Model residency depends on the selected backend; the Kaggle INT8 adapter starts a fresh Wan runner for each clip.
 * **Robust Frame Extraction**: Employs an `ffmpeg` seek-to-end strategy with frame overwriting (`-update 1`) to guarantee pixel-perfect extraction of the absolute last frame.
 * **Scientific Prompt Builder**: Dynamically constructs image and motion prompts using structured scientific variables (states, constraints, and stop conditions).
 
@@ -29,6 +34,62 @@ chmod +x lightning_setup_minimal.sh
 ---
 
 ## 🏃 Execution
+
+### Kaggle: Wan 2.2 I2V-A14B (experimental)
+
+Use a Kaggle notebook with **Internet enabled and both Tesla T4 GPUs enabled**.
+Clone all three repositories into `/kaggle/working`, mount your starting image,
+then run from the pipeline checkout:
+
+```bash
+cd /kaggle/working
+git clone https://github.com/abhinavk0006/Wan2.2.git
+git clone https://github.com/abhinavk0006/image-to-video-pipeline.git
+git clone https://github.com/abhinavk0006/Edu-video-gen-dataset.git
+python -m pip install -q -r /kaggle/working/Edu-video-gen-dataset/requirements.txt imageio-ffmpeg
+cd /kaggle/working/image-to-video-pipeline
+python main.py \
+  --query "YOUR EXPERIMENT QUERY" \
+  --rag-repo-dir /kaggle/working/Edu-video-gen-dataset \
+  --rag-top-k 1 \
+  --rag-max-clips 1 \
+  --rag-clip-duration-seconds 1 \
+  --initial-image /kaggle/input/YOUR_DATASET/YOUR_IMAGE.jpeg \
+  --output-dir /kaggle/working/pipeline_outputs \
+  --generator-script kaggle_wan_wrapper.py \
+  --generator-working-dir /kaggle/working/image-to-video-pipeline \
+  --wan-repo-dir /kaggle/working/Wan2.2 \
+  --wan-model-preset i2v-a14b
+```
+
+The `--query` path calls the dataset repo's TF-IDF retriever and source-grounded
+prompt-bundle builder; its best positive match becomes a pipeline experiment,
+with source IDs and source-review status retained in the generated knowledge
+JSON. `--rag-max-clips 1` limits this initial integration preview to one
+retrieved procedure step; omit the flag to generate all retrieved steps. The
+supplied image sets the first clip; later clips use each preceding
+clip's final frame. Dataset image URLs are not downloaded or substituted for
+your mounted starting image. To run the neutral one-clip test-tube preview
+without retrieval, replace `--query` and `--rag-repo-dir` with
+`--knowledge-file knowledge/test_tube_drop.json`.
+
+The adapter maps each clip duration to Wan's 16-fps `4n+1` frame count
+(minimum 17 frames), and uses the four-step Lightning adapters with the
+streamed INT8 experts. `--rag-clip-duration-seconds 1` is the currently tested
+preview duration; longer durations are available but still need Kaggle VRAM
+and runtime validation.
+
+**Runtime and validation:** the successful Kaggle check so far was a 17-frame
+(about one-second) clip. Wan loads and converts both experts for every clip in
+this adapter, so multi-clip runs repeat several minutes of setup per clip; the
+existing pipeline daemon keeps the adapter process alive, but does not keep the
+Wan model loaded. A five-second clip maps to 81 frames and has not been tested
+for runtime or memory on T4. Start with one short clip; do not assume a set of
+four or five long clips will finish within one session. Resume support skips
+clips whose output files already exist.
+
+Outputs are written under `/kaggle/working/pipeline_outputs/<experiment>/`;
+download `final_video.mp4` from Kaggle's Output panel after the run.
 
 Run the pipeline by providing the path to your scientific experiment JSON log, the generator wrapper script, the Wan 2.2 model directory, and the initial seed image:
 
@@ -57,4 +118,4 @@ To run the **14B Image-to-Video** model without crashing under standard hardware
 2. **CPU-to-GPU Memory Unloading**: The inactive model is explicitly offloaded back to the CPU and garbage collected before the active model is loaded, keeping memory overhead within physical RAM boundaries.
 3. **Low-Precision Execution**: Models are converted to `bfloat16` and run with `offload_model=True` to minimize VRAM footprint.
 
-For the 14B page-replacement setup on a 48GB GPU, the wrapper keeps T5 on GPU and only uses --offload_model True for the main diffusion path. That matches the intended GPU-accelerated encoding flow and avoids forcing the text encoder onto CPU.
+The original `wan_local_wrapper.py` targets its separate local Wan setup. For Kaggle's two-T4 streamed INT8 path, use `kaggle_wan_wrapper.py` and the instructions above; it does not use the local wrapper's VRAM assumptions.

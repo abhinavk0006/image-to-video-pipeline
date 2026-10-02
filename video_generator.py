@@ -91,6 +91,7 @@ class LocalVideoGenerator:
 					"prompt": motion_prompt,
 					"clip_duration": request.prompt_bundle.clip_duration_seconds,
 					"negative_prompt": request.prompt_bundle.negative_prompt,
+					"clip_name": request.clip_name,
 				}
 				
 				try:
