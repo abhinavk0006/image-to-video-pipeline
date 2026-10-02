@@ -28,6 +28,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wan-repo-dir", type=Path, required=True)
     parser.add_argument("--model-preset", choices=["i2v-a14b"], default="i2v-a14b")
     parser.add_argument("--max-memory-gib", type=float, default=8.0)
+    parser.add_argument("--gpu0-memory-gib", type=float)
+    parser.add_argument("--gpu1-memory-gib", type=float)
     parser.add_argument("--daemon", action="store_true")
     # Arguments emitted by the pipeline's regular command mode.
     parser.add_argument("--input-image")
@@ -71,6 +73,10 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         "--seed", str(seed),
         "--output", str(output),
     ]
+    if args.gpu0_memory_gib is not None:
+        command.extend(["--gpu0-memory-gib", str(args.gpu0_memory_gib)])
+    if args.gpu1_memory_gib is not None:
+        command.extend(["--gpu1-memory-gib", str(args.gpu1_memory_gib)])
     output.parent.mkdir(parents=True, exist_ok=True)
     print(
         f"Starting {clip_name or output.name}: {duration:g}s -> "
