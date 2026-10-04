@@ -16,6 +16,7 @@ class PipelineConfig:
     default_clip_duration_seconds: float = 1.0
     default_image_extension: str = "png"
     default_video_extension: str = "mp4"
+    continuity_mode: str = "independent"
 
     @property
     def experiment_output_dir(self) -> str:

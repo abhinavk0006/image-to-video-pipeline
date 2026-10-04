@@ -13,7 +13,7 @@ that runner; it does not make the 14B model suitable for a 2GB laptop GPU.
 
 ## 🚀 Key Features
 
-* **Multi-Clip Visual Continuity**: Decodes and extracts the exact final frame of each video clip to use as the starting frame of the next.
+* **Controlled Multi-Clip Generation**: Defaults to independent, verified reference images per clip; opt into final-frame chaining only when a physical action genuinely continues across shots.
 * **Resume Support**: Interrupted runs automatically skip already generated clips, allowing seamless pipeline recovery.
 * **Generator Daemon Interface**: Reuses a JSON-RPC generator process across sequential clips. Model residency depends on the selected backend; the Kaggle INT8 adapter starts a fresh Wan runner for each clip.
 * **Robust Frame Extraction**: Employs an `ffmpeg` seek-to-end strategy with frame overwriting (`-update 1`) to guarantee pixel-perfect extraction of the absolute last frame.
@@ -78,6 +78,18 @@ The adapter maps each clip duration to Wan's 16-fps `4n+1` frame count
 streamed INT8 experts. `--rag-clip-duration-seconds 1` is the currently tested
 preview duration; longer durations are available but still need Kaggle VRAM
 and runtime validation.
+
+The pipeline defaults to independent shots. With `--continuity-mode independent`,
+each clip uses its explicit `input_frame_path` when present, otherwise the
+verified `--initial-image` reference. This avoids compounding generated-frame
+drift across a long experiment. Use `--continuity-mode chain` only for actions
+that must continue visually, such as a single pour or stirring motion. Per-step
+durations can be set with `clip_duration_seconds` in manual JSON; RAG records
+may provide `duration_seconds`.
+
+For activation-memory experiments, pass `--wan-max-area 345600` (or another
+positive pixel area) to the Kaggle command and `--wan-memory-telemetry` to log
+allocated, reserved, and free memory on each visible GPU.
 
 **Runtime and validation:** the successful Kaggle check so far was a 17-frame
 (about one-second) clip. Wan loads and converts both experts for every clip in

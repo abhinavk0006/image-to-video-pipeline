@@ -56,6 +56,8 @@ class ExperimentPipeline:
 
 		clip_video_paths: list[Path] = []
 		previous_frame_path = Path(initial_image_path) if initial_image_path else None
+		if self.config.continuity_mode not in {"independent", "chain"}:
+			raise PipelineError("continuity_mode must be either 'independent' or 'chain'")
 
 		try:
 			for index, clip in enumerate(experiment.clips):
@@ -70,6 +72,7 @@ class ExperimentPipeline:
 					clip=clip,
 					clip_name=clip_name,
 					previous_frame_path=previous_frame_path,
+					fallback_image_path=Path(initial_image_path) if initial_image_path else None,
 					image_prompt_path=image_prompt_path,
 				)
 
@@ -96,7 +99,8 @@ class ExperimentPipeline:
 				clip.generated_image_path = str(clip_input_image_path)
 				clip.output_clip_path = str(generated_video_path)
 				clip.extracted_frame_path = str(last_frame_path)
-				previous_frame_path = last_frame_path
+				if self.config.continuity_mode == "chain":
+					previous_frame_path = last_frame_path
 				clip_video_paths.append(generated_video_path)
 
 			if not clip_video_paths:
@@ -133,6 +137,7 @@ class ExperimentPipeline:
 		clip_name: str,
 		previous_frame_path: Path | None,
 		image_prompt_path: Path,
+		fallback_image_path: Path | None = None,
 	) -> Path:
 		if clip.generated_image_path:
 			provided_image_path = Path(clip.generated_image_path)
@@ -173,9 +178,20 @@ class ExperimentPipeline:
 					return resolved
 			return None
 
-		# 1. Previous frame stitched image (takes precedence for video continuity)
-		if previous_frame_path and previous_frame_path.exists():
+		# Explicit per-clip references always win, regardless of continuity mode.
+		if clip.input_frame_path:
+			resolved = _resolve_with_extensions(Path(clip.input_frame_path))
+			if resolved:
+				return resolved
+
+		# Chaining is opt-in because generated frames can compound visual drift.
+		if self.config.continuity_mode == "chain" and previous_frame_path and previous_frame_path.exists():
 			return previous_frame_path
+
+		# In independent mode, reuse the verified initial reference when no
+		# clip-specific keyframe is supplied.
+		if fallback_image_path and fallback_image_path.exists():
+			return fallback_image_path
 
 		# 2. Candidate: clip-specific input inside the clip directory (e.g. manual image for the clip)
 		expected_image_path = Path(self.config.get_clip_image_file(clip_name))

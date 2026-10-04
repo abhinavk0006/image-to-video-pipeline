@@ -107,7 +107,9 @@ def retrieve_pipeline_experiment(
                 "prompt_bundle": {
                     "motion_prompt": prompt["prompt"],
                     "negative_prompt": prompt.get("negative_prompt", ""),
-                    "clip_duration_seconds": clip_duration_seconds,
+                    "clip_duration_seconds": float(
+                        prompt.get("duration_seconds") or clip_duration_seconds
+                    ),
                 },
                 "metadata": {
                     "experiment_id": experiment_id,

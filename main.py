@@ -111,6 +111,23 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Duration assigned to each retrieved step; 1 second maps to the currently validated 17-frame Wan preview.",
     )
+    parser.add_argument(
+        "--continuity-mode",
+        choices=["independent", "chain"],
+        default="independent",
+        help="Use verified references independently, or feed each clip's final frame into the next clip.",
+    )
+    parser.add_argument(
+        "--wan-max-area",
+        type=int,
+        default=None,
+        help="Wan pixel-area override for lower-resolution fallback shots.",
+    )
+    parser.add_argument(
+        "--wan-memory-telemetry",
+        action="store_true",
+        help="Log per-GPU memory telemetry in the Kaggle Wan runner.",
+    )
     return parser
 
 
@@ -166,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         knowledge_dir=args.knowledge_dir,
         input_dir=args.input_dir,
         experiment_name=experiment_name,
+        continuity_mode=args.continuity_mode,
     )
 
     video_generator = LocalVideoGenerator(
@@ -175,6 +193,8 @@ def main(argv: list[str] | None = None) -> int:
             *list(args.generator_arg),
             *([f"--wan-repo-dir={args.wan_repo_dir}"] if args.wan_repo_dir else []),
             f"--model-preset={args.wan_model_preset}",
+            *([f"--max-area={args.wan_max_area}"] if args.wan_max_area else []),
+            *(["--memory-telemetry"] if args.wan_memory_telemetry else []),
         ],
         working_directory=args.generator_working_dir,
     )
