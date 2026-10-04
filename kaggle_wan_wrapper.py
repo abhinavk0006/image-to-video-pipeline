@@ -32,6 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpu1-memory-gib", type=float)
     parser.add_argument("--max-area", type=int)
     parser.add_argument("--memory-telemetry", action="store_true")
+    parser.add_argument(
+        "--lightning",
+        action="store_true",
+        help="Use the Wan 2.2 Lightning four-step path (the Kaggle adapter's only supported mode).",
+    )
     parser.add_argument("--daemon", action="store_true")
     # Arguments emitted by the pipeline's regular command mode.
     parser.add_argument("--input-image")
