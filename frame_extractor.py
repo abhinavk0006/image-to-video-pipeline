@@ -57,7 +57,8 @@ class FrameExtractor:
 		seek_time = max(duration - offset_seconds, 0.0)
 
 		ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-		# use -ss before -i for robust seeking to the last frame without falling off the video end
+		# Write exactly one image instead of relying on image-sequence update mode.
+		# The latter can exit successfully without creating the PNG in Kaggle.
 		command = [
 			ffmpeg_exe,
 			"-y",
@@ -65,7 +66,7 @@ class FrameExtractor:
 			f"{seek_time:.3f}",
 			"-i",
 			str(input_path),
-			"-update",
+			"-frames:v",
 			"1",
 			str(destination_path),
 		]
