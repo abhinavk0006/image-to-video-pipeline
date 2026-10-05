@@ -53,10 +53,15 @@ class PromptBuilder:
 
 	def build_motion_prompt(self, experiment: Experiment, clip: Clip) -> str:
 		motion = clip.motion_prompt
+		structured_parts = [
+			f"Starting state: {clip.state_before}" if clip.state_before else "",
+			f"Action: {clip.action}" if clip.action else "",
+			f"Required ending state: {clip.state_after}" if clip.state_after else "",
+		]
 		
 		# If a full motion_prompt is provided, use it directly
 		if motion.motion_prompt:
-			return motion.motion_prompt
+			return _join_sentences([motion.motion_prompt, *structured_parts])
 		
 		# Otherwise assemble from components
 		parts = [
@@ -66,6 +71,7 @@ class PromptBuilder:
 			f"Direction: {motion.direction}" if motion.direction else "",
 			f"Constraints: {motion.constraints}" if motion.constraints else "",
 			f"Stop when: {motion.stop_condition}" if motion.stop_condition else "",
+			*structured_parts,
 			self.metadata.get("motion_style", ""),
 			self.motion_suffix,
 		]

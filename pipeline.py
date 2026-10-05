@@ -60,6 +60,15 @@ def resolve_handoff_offset_seconds(
 	return offset
 
 
+def clip_requires_continuity(config_mode: str, clip: Clip) -> bool:
+	"""Apply explicit per-step continuity metadata over the global mode."""
+	if config_mode != "chain":
+		return False
+	if clip.continuity_required is not None:
+		return clip.continuity_required
+	return clip.reference_policy not in {"independent", "state_keyframe"}
+
+
 @dataclass(slots=True)
 class ExperimentPipeline:
 	"""Coordinates clip-by-clip generation from structured experiment data."""
@@ -97,7 +106,11 @@ class ExperimentPipeline:
 				clip_input_image_path = self._resolve_clip_input_image(
 					clip=clip,
 					clip_name=clip_name,
-					previous_frame_path=previous_frame_path,
+					previous_frame_path=(
+						previous_frame_path
+						if clip_requires_continuity(self.config.continuity_mode, clip)
+						else None
+					),
 					fallback_image_path=Path(initial_image_path) if initial_image_path else None,
 					image_prompt_path=image_prompt_path,
 				)
@@ -131,7 +144,7 @@ class ExperimentPipeline:
 				clip.generated_image_path = str(clip_input_image_path)
 				clip.output_clip_path = str(generated_video_path)
 				clip.extracted_frame_path = str(last_frame_path)
-				if self.config.continuity_mode == "chain":
+				if clip_requires_continuity(self.config.continuity_mode, clip):
 					previous_frame_path = last_frame_path
 				clip_video_paths.append(generated_video_path)
 

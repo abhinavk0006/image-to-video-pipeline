@@ -152,3 +152,24 @@ To run the **14B Image-to-Video** model without crashing under standard hardware
 3. **Low-Precision Execution**: Models are converted to `bfloat16` and run with `offload_model=True` to minimize VRAM footprint.
 
 The original `wan_local_wrapper.py` targets its separate local Wan setup. For Kaggle's two-T4 streamed INT8 path, use `kaggle_wan_wrapper.py` and the instructions above; it does not use the local wrapper's VRAM assumptions.
+
+## Structured state/action inputs
+
+New experiment inputs can describe each step explicitly:
+
+```json
+{
+  "state_before": "colorless solution in flask",
+  "action": "add reagent slowly",
+  "state_after": "pale pink endpoint",
+  "visual_priority": "high",
+  "continuity_required": false,
+  "reference_policy": "state_keyframe",
+  "duration_seconds": 2
+}
+```
+
+These fields are compiled into the motion prompt and override global chaining
+when `continuity_required` is present. `state_keyframe` and `independent`
+policies use the verified reference image; continuous actions can set
+`continuity_required` to `true` and use a handoff frame.

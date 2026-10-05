@@ -47,6 +47,10 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
     scene_data = _as_dict(clip_data.get("scene", clip_data.get("image_state", {})))
     prompt_data = _as_dict(clip_data.get("prompt_bundle", clip_data.get("motion_prompt", {})))
 
+    duration = clip_data.get("duration_seconds")
+    if duration is not None:
+        prompt_data = {**prompt_data, "clip_duration_seconds": duration}
+    continuity = clip_data.get("continuity_required")
     return Clip(
         name=str(clip_data.get("name", f"clip_{index + 1}")),
         image_state=_parse_scene(scene_data),
@@ -61,6 +65,12 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
             if clip_data.get("handoff_offset_seconds") is not None
             else None
         ),
+        state_before=str(clip_data.get("state_before", "")),
+        action=str(clip_data.get("action", "")),
+        state_after=str(clip_data.get("state_after", "")),
+        visual_priority=str(clip_data.get("visual_priority", "normal")),
+        continuity_required=bool(continuity) if continuity is not None else None,
+        reference_policy=str(clip_data.get("reference_policy", "")),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 

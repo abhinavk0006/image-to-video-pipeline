@@ -47,6 +47,12 @@ class Clip:
     extracted_frame_path: Optional[str] = None
     handoff_mode: str = "near_end"
     handoff_offset_seconds: Optional[float] = None
+    state_before: str = ""
+    action: str = ""
+    state_after: str = ""
+    visual_priority: str = "normal"
+    continuity_required: Optional[bool] = None
+    reference_policy: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
