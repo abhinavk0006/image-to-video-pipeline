@@ -79,6 +79,27 @@ streamed INT8 experts. `--rag-clip-duration-seconds 1` is the currently tested
 preview duration; longer durations are available but still need Kaggle VRAM
 and runtime validation.
 
+For chained shots, handoff timing is configurable per clip. The default
+`handoff_mode` is `near_end`, which extracts `0.5` seconds before the end to
+avoid seeking beyond the final encoded frame. Use `handoff_mode: "final"` when
+the final state is the relevant handoff, or use
+`handoff_mode: "offset"` with `handoff_offset_seconds` when the meaningful
+state occurs at a known earlier time:
+
+```json
+{
+  "name": "release_one_drop",
+  "handoff_mode": "offset",
+  "handoff_offset_seconds": 0.75
+}
+```
+
+Choose the handoff frame by inspecting the generated clip: it must visibly
+contain the object and state named by the next clip. Use an earlier offset when
+the object disappears or the final frames introduce a new action; use
+`final` only when the final state is stable. The timing controls do not make
+Wan recover an object that is absent from the selected frame.
+
 The pipeline defaults to independent shots. With `--continuity-mode independent`,
 each clip uses its explicit `input_frame_path` when present, otherwise the
 verified `--initial-image` reference. This avoids compounding generated-frame

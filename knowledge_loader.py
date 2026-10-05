@@ -55,6 +55,12 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         input_frame_path=clip_data.get("input_frame_path"),
         generated_image_path=clip_data.get("generated_image_path"),
         extracted_frame_path=clip_data.get("extracted_frame_path"),
+        handoff_mode=str(clip_data.get("handoff_mode", "near_end")),
+        handoff_offset_seconds=(
+            float(clip_data["handoff_offset_seconds"])
+            if clip_data.get("handoff_offset_seconds") is not None
+            else None
+        ),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 

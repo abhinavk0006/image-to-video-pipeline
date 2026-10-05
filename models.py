@@ -45,6 +45,8 @@ class Clip:
     input_frame_path: Optional[str] = None
     generated_image_path: Optional[str] = None
     extracted_frame_path: Optional[str] = None
+    handoff_mode: str = "near_end"
+    handoff_offset_seconds: Optional[float] = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

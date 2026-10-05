@@ -34,6 +34,32 @@ class ManualImageRequiredError(PipelineError):
 		self.image_prompt_path = image_prompt_path
 
 
+def resolve_handoff_offset_seconds(
+	mode: str,
+	*,
+	explicit_offset_seconds: float | None,
+	default_offset_seconds: float,
+) -> float:
+	"""Resolve the handoff frame timing from a clip's declared state policy."""
+	if mode == "near_end":
+		offset = default_offset_seconds
+	elif mode == "final":
+		offset = 0.05
+	elif mode == "offset":
+		if explicit_offset_seconds is None:
+			raise PipelineError(
+				"handoff_mode='offset' requires handoff_offset_seconds"
+			)
+		offset = explicit_offset_seconds
+	else:
+		raise PipelineError(
+			"handoff_mode must be 'near_end', 'final', or 'offset'"
+		)
+	if offset < 0:
+		raise PipelineError("handoff_offset_seconds must be non-negative")
+	return offset
+
+
 @dataclass(slots=True)
 class ExperimentPipeline:
 	"""Coordinates clip-by-clip generation from structured experiment data."""
@@ -91,9 +117,15 @@ class ExperimentPipeline:
 						)
 					)
 
-				last_frame_path = self.frame_extractor.extract_last_frame(
+				handoff_offset = resolve_handoff_offset_seconds(
+					clip.handoff_mode,
+					explicit_offset_seconds=clip.handoff_offset_seconds,
+					default_offset_seconds=self.frame_extractor.frame_offset_seconds,
+				)
+				last_frame_path = self.frame_extractor.extract_frame_before_end(
 					generated_video_path,
 					self.config.get_clip_frame_file(clip_name),
+					offset_seconds=handoff_offset,
 				)
 
 				clip.generated_image_path = str(clip_input_image_path)

@@ -27,18 +27,34 @@ class FrameExtractor:
 	frame_offset_seconds: float = 0.50
 
 	def extract_last_frame(self, video_path: str | Path, output_path: str | Path) -> Path:
-		"""Save the last frame of `video_path` to `output_path`."""
+		"""Save a stable near-end handoff frame to `output_path`."""
+		return self.extract_frame_before_end(
+			video_path,
+			output_path,
+			offset_seconds=self.frame_offset_seconds,
+		)
+
+	def extract_frame_before_end(
+		self,
+		video_path: str | Path,
+		output_path: str | Path,
+		*,
+		offset_seconds: float,
+	) -> Path:
+		"""Save the frame `offset_seconds` before the end of a video."""
 
 		input_path = Path(video_path)
 		destination_path = Path(output_path)
 
 		if not input_path.exists():
 			raise FrameExtractionError(f"Video file does not exist: {input_path}")
+		if offset_seconds < 0:
+			raise FrameExtractionError("Frame offset must be non-negative")
 
 		destination_path.parent.mkdir(parents=True, exist_ok=True)
 
 		duration = self._get_video_duration(input_path)
-		seek_time = max(duration - self.frame_offset_seconds, 0.0)
+		seek_time = max(duration - offset_seconds, 0.0)
 
 		ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
 		# use -ss before -i for robust seeking to the last frame without falling off the video end
