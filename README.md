@@ -173,3 +173,18 @@ These fields are compiled into the motion prompt and override global chaining
 when `continuity_required` is present. `state_keyframe` and `independent`
 policies use the verified reference image; continuous actions can set
 `continuity_required` to `true` and use a handoff frame.
+
+For reliable multi-step experiments, continuous steps should also name their
+source explicitly with `reference_clip`, for example:
+
+```json
+{
+  "name": "ammonia_dissolves_chloride_ppt",
+  "state_before": "white curdy silver chloride precipitate already visible",
+  "action": "add dilute ammonia gradually",
+  "state_after": "clear colorless solution",
+  "continuity_required": true,
+  "reference_policy": "previous_state_keyframe",
+  "reference_clip": "silver_nitrate_chloride_test"
+}
+```

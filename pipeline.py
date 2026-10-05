@@ -95,10 +95,19 @@ class ExperimentPipeline:
 			raise PipelineError("continuity_mode must be either 'independent' or 'chain'")
 
 		try:
+			generated_frames: dict[str, Path] = {}
 			for index, clip in enumerate(experiment.clips):
 				clip_name = clip.name or f"clip_{index + 1}"
 				clip.name = clip_name
 				self._prepare_clip_directory(clip_name)
+				reference_frame = previous_frame_path
+				if clip.reference_clip:
+					if clip.reference_clip not in generated_frames:
+						raise PipelineError(
+							f"Clip '{clip_name}' references unavailable clip "
+							f"'{clip.reference_clip}'"
+						)
+					reference_frame = generated_frames[clip.reference_clip]
 
 				prompt_bundle = self.prompt_builder.build_prompt_bundle(experiment, clip)
 				image_prompt_path = self._write_clip_prompts(clip_name, prompt_bundle.image_prompt, prompt_bundle.motion_prompt)
@@ -107,7 +116,7 @@ class ExperimentPipeline:
 					clip=clip,
 					clip_name=clip_name,
 					previous_frame_path=(
-						previous_frame_path
+						reference_frame
 						if clip_requires_continuity(self.config.continuity_mode, clip)
 						else None
 					),
@@ -147,6 +156,7 @@ class ExperimentPipeline:
 				# Keep the latest generated state available; each clip independently
 				# decides whether it is safe to consume it.
 				previous_frame_path = last_frame_path
+				generated_frames[clip_name] = last_frame_path
 				clip_video_paths.append(generated_video_path)
 
 			if not clip_video_paths:

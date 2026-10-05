@@ -53,6 +53,7 @@ class Clip:
     visual_priority: str = "normal"
     continuity_required: Optional[bool] = None
     reference_policy: str = ""
+    reference_clip: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

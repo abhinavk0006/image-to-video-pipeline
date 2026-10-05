@@ -71,6 +71,7 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         visual_priority=str(clip_data.get("visual_priority", "normal")),
         continuity_required=bool(continuity) if continuity is not None else None,
         reference_policy=str(clip_data.get("reference_policy", "")),
+        reference_clip=str(clip_data.get("reference_clip", "")),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 
