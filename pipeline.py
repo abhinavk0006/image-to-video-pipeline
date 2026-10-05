@@ -144,8 +144,9 @@ class ExperimentPipeline:
 				clip.generated_image_path = str(clip_input_image_path)
 				clip.output_clip_path = str(generated_video_path)
 				clip.extracted_frame_path = str(last_frame_path)
-				if clip_requires_continuity(self.config.continuity_mode, clip):
-					previous_frame_path = last_frame_path
+				# Keep the latest generated state available; each clip independently
+				# decides whether it is safe to consume it.
+				previous_frame_path = last_frame_path
 				clip_video_paths.append(generated_video_path)
 
 			if not clip_video_paths:
@@ -229,8 +230,8 @@ class ExperimentPipeline:
 			if resolved:
 				return resolved
 
-		# Chaining is opt-in because generated frames can compound visual drift.
-		if self.config.continuity_mode == "chain" and previous_frame_path and previous_frame_path.exists():
+		# The caller only supplies a previous frame for explicitly continuous clips.
+		if previous_frame_path and previous_frame_path.exists():
 			return previous_frame_path
 
 		# In independent mode, reuse the verified initial reference when no
