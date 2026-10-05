@@ -68,11 +68,19 @@ class FrameExtractor:
 			str(input_path),
 			"-frames:v",
 			"1",
+			"-f",
+			"image2",
 			str(destination_path),
 		]
 
 		try:
-			subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
+			result = subprocess.run(
+				command,
+				check=True,
+				capture_output=True,
+				text=True,
+				errors="replace",
+			)
 		except FileNotFoundError as error:
 			ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
 			raise FrameExtractionError(f"{ffmpeg_exe} is not available on this system") from error
@@ -82,7 +90,11 @@ class FrameExtractor:
 			) from error
 
 		if not destination_path.exists():
-			raise FrameExtractionError(f"Frame extraction completed but no file was written: {destination_path}")
+			stderr = result.stderr.strip() if "result" in locals() else ""
+			raise FrameExtractionError(
+				f"Frame extraction completed but no file was written: "
+				f"{destination_path}. ffmpeg output: {stderr[-1000:]}"
+			)
 
 		return destination_path
 
