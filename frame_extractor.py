@@ -53,17 +53,14 @@ class FrameExtractor:
 
 		destination_path.parent.mkdir(parents=True, exist_ok=True)
 
-		duration = self._get_video_duration(input_path)
-		seek_time = max(duration - offset_seconds, 0.0)
-
 		ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-		# Write exactly one image instead of relying on image-sequence update mode.
-		# The latter can exit successfully without creating the PNG in Kaggle.
+		# Seek relative to the end so rounded or unreliable container duration
+		# metadata cannot place the seek beyond the available frames.
 		command = [
 			ffmpeg_exe,
 			"-y",
-			"-ss",
-			f"{seek_time:.3f}",
+			"-sseof",
+			f"-{max(offset_seconds, 0.001):.3f}",
 			"-i",
 			str(input_path),
 			"-frames:v",
