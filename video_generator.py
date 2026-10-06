@@ -8,6 +8,7 @@ underlying generation script remains swappable.
 from __future__ import annotations
 
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
@@ -17,6 +18,16 @@ from models import PromptBundle
 
 class VideoGenerationError(RuntimeError):
 	"""Raised when a local video generation command fails."""
+
+
+def is_cuda_oom_error(message: str) -> bool:
+	"""Return whether a generator failure is a CUDA out-of-memory failure."""
+	normalized = message.lower()
+	return (
+		"out of memory" in normalized
+		or "cuda_error_out_of_memory" in normalized
+		or "cublas_status_alloc_failed" in normalized
+	)
 
 
 @dataclass(slots=True)
@@ -38,6 +49,8 @@ class LocalVideoGenerator:
 	script_path: str | None = None
 	base_arguments: list[str] = field(default_factory=list)
 	working_directory: str | Path | None = None
+	max_area: int | None = None
+	fallback_areas: tuple[int, ...] = ()
 	_process: subprocess.Popen | None = field(default=None, init=False, repr=False)
 	_use_daemon: bool = field(default=True, init=False)
 
@@ -51,6 +64,8 @@ class LocalVideoGenerator:
 			raise VideoGenerationError(f"Input image does not exist: {input_image_path}")
 
 		output_video_path.parent.mkdir(parents=True, exist_ok=True)
+
+		areas = self._generation_areas()
 
 		# Try daemon mode if enabled
 		if self._use_daemon:
@@ -85,65 +100,123 @@ class LocalVideoGenerator:
 			if self._use_daemon and self._process is not None:
 				import json
 				motion_prompt = request.prompt_bundle.motion_prompt or self._compose_motion_prompt(request.prompt_bundle)
-				task = {
-					"input_image": str(input_image_path),
-					"output_video": str(output_video_path),
-					"prompt": motion_prompt,
-					"clip_duration": request.prompt_bundle.clip_duration_seconds,
-					"negative_prompt": request.prompt_bundle.negative_prompt,
-					"clip_name": request.clip_name,
-				}
-				
-				try:
-					self._process.stdin.write(json.dumps(task) + "\n")
-					self._process.stdin.flush()
-					
-					response_line = self._process.stdout.readline()
-					if not response_line:
-						raise VideoGenerationError("Video generation daemon crashed during generation.")
-						
-					response = json.loads(response_line)
-					if response.get("status") == "success":
-						if not output_video_path.exists():
-							raise VideoGenerationError(f"Video generation completed but no file was written: {output_video_path}")
-						return output_video_path
-					else:
-						raise VideoGenerationError(f"Video generation daemon error: {response.get('error')}")
-				except Exception as e:
-					if self._process:
-						try:
-							self._process.kill()
-						except Exception:
-							pass
-						self._process = None
-					raise VideoGenerationError(f"Daemon generation failed: {str(e)}") from e
+				for attempt, area in enumerate(areas):
+					task = {
+						"input_image": str(input_image_path),
+						"output_video": str(output_video_path),
+						"prompt": motion_prompt,
+						"clip_duration": request.prompt_bundle.clip_duration_seconds,
+						"negative_prompt": request.prompt_bundle.negative_prompt,
+						"clip_name": request.clip_name,
+					}
+					if area is not None:
+						task["max_area"] = area
+
+					try:
+						self._process.stdin.write(json.dumps(task) + "\n")
+						self._process.stdin.flush()
+
+						response_line = self._process.stdout.readline()
+						if not response_line:
+							raise VideoGenerationError(
+								"Video generation daemon crashed during generation."
+							)
+
+						response = json.loads(response_line)
+						if response.get("status") == "success":
+							if not output_video_path.exists():
+								raise VideoGenerationError(
+									"Video generation completed but no file was written: "
+									f"{output_video_path}"
+								)
+							print(
+								f"Generated {request.clip_name or output_video_path.name} "
+								f"at area {area if area is not None else 'default'}.",
+								file=sys.stderr,
+							)
+							return output_video_path
+
+						error_message = str(response.get("error", "unknown daemon error"))
+						if is_cuda_oom_error(error_message) and attempt + 1 < len(areas):
+							print(
+								f"CUDA OOM at area {area if area is not None else 'default'}; "
+								f"retrying at area {areas[attempt + 1]}.",
+								file=sys.stderr,
+							)
+							output_video_path.unlink(missing_ok=True)
+							continue
+						raise VideoGenerationError(
+							f"Video generation daemon error at area "
+							f"{area if area is not None else 'default'}: {error_message}"
+						)
+					except VideoGenerationError:
+						if self._process is not None:
+							try:
+								self._process.kill()
+							except Exception:
+								pass
+							self._process = None
+						raise
+					except Exception as error:
+						if self._process is not None:
+							try:
+								self._process.kill()
+							except Exception:
+								pass
+							self._process = None
+						raise VideoGenerationError(
+							f"Daemon generation failed at area "
+							f"{area if area is not None else 'default'}: {error}"
+						) from error
+				raise AssertionError("generation area fallback loop was empty")
 
 		# Fallback to standard subprocess execution
-		command = self._build_command(request, input_image_path, output_video_path)
-
-		try:
-			subprocess.run(
-				command,
-				check=True,
-				capture_output=True,
-				text=True,
-				cwd=str(self.working_directory) if self.working_directory is not None else None,
+		for attempt, area in enumerate(areas):
+			command = self._build_command(
+				request, input_image_path, output_video_path, max_area=area
 			)
-		except FileNotFoundError as error:
-			raise VideoGenerationError(
-				f"Could not start video generation command: {command[0]}"
-			) from error
-		except subprocess.CalledProcessError as error:
-			raise VideoGenerationError(
-				f"Video generation failed for {request.clip_name or output_video_path.name}: {error.stderr.strip()}"
-			) from error
+			try:
+				subprocess.run(
+					command,
+					check=True,
+					capture_output=True,
+					text=True,
+					cwd=str(self.working_directory) if self.working_directory is not None else None,
+				)
+			except FileNotFoundError as error:
+				raise VideoGenerationError(
+					f"Could not start video generation command: {command[0]}"
+				) from error
+			except subprocess.CalledProcessError as error:
+				details = (error.stderr or error.stdout or "").strip()
+				if is_cuda_oom_error(details) and attempt + 1 < len(areas):
+					print(
+						f"CUDA OOM at area {area if area is not None else 'default'}; "
+						f"retrying at area {areas[attempt + 1]}.",
+						file=sys.stderr,
+					)
+					output_video_path.unlink(missing_ok=True)
+					continue
+				raise VideoGenerationError(
+					f"Video generation failed at area "
+					f"{area if area is not None else 'default'} for "
+					f"{request.clip_name or output_video_path.name}: {details}"
+				) from error
 
-		if not output_video_path.exists():
-			raise VideoGenerationError(
-				f"Video generation completed but no file was written: {output_video_path}"
+			if not output_video_path.exists():
+				raise VideoGenerationError(
+					"Video generation completed but no file was written: "
+					f"{output_video_path} (selected area "
+					f"{area if area is not None else 'default'})"
+				)
+			print(
+				f"Generated {request.clip_name or output_video_path.name} at area "
+				f"{area if area is not None else 'default'}.",
+				file=sys.stderr,
 			)
+			return output_video_path
 
-		return output_video_path
+		raise AssertionError("generation area fallback loop was empty")
 
 	def stop_daemon(self) -> None:
 		"""Exit the daemon process cleanly."""
@@ -165,6 +238,8 @@ class LocalVideoGenerator:
 		request: VideoGenerationRequest,
 		input_image_path: Path,
 		output_video_path: Path,
+		*,
+		max_area: int | None = None,
 	) -> list[str]:
 		if self.script_path is None:
 			raise VideoGenerationError("script_path must be set to run local video generation")
@@ -188,11 +263,30 @@ class LocalVideoGenerator:
 
 		if request.clip_name:
 			command.extend(["--clip-name", request.clip_name])
+		if max_area is not None:
+			command.extend(["--max-area", str(max_area)])
 
 		for key, value in request.metadata.items():
 			command.extend([f"--{key.replace('_', '-')}", value])
 
 		return command
+
+	def _generation_areas(self) -> tuple[int | None, ...]:
+		areas = (self.max_area, *self.fallback_areas)
+		if not areas:
+			return (None,)
+		if any(area is not None and area <= 0 for area in areas):
+			raise VideoGenerationError("Configured generation areas must be greater than zero")
+		if len(set(areas)) != len(areas):
+			raise VideoGenerationError("Configured generation areas must be unique")
+		if any(
+			areas[index] is not None
+			and areas[index + 1] is not None
+			and areas[index + 1] >= areas[index]
+			for index in range(len(areas) - 1)
+		):
+			raise VideoGenerationError("Fallback generation areas must strictly decrease")
+		return areas
 
 	@staticmethod
 	def _compose_motion_prompt(prompt_bundle: PromptBundle) -> str:

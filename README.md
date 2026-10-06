@@ -110,7 +110,13 @@ may provide `duration_seconds`.
 
 For activation-memory experiments, pass `--wan-max-area 345600` (or another
 positive pixel area) to the Kaggle command and `--wan-memory-telemetry` to log
-allocated, reserved, and free memory on each visible GPU.
+allocated, reserved, and free memory on each visible GPU. If a requested area
+causes CUDA OOM, configure one or more lower areas in descending order, for
+example `--wan-max-area 399360 --wan-fallback-area 200704
+--wan-fallback-area 129024`. The same clip is retried through the existing
+daemon without restarting the pipeline; reference and chained-frame inputs are
+unchanged. Only CUDA OOM failures trigger this fallback, and logs identify the
+selected area (or the final area on failure).
 
 **Runtime and validation:** use the persistent Wan daemon for multi-clip Kaggle
 runs. It loads the shared T5/VAE infrastructure once and retains the last

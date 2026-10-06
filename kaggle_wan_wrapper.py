@@ -16,6 +16,31 @@ import sys
 from pathlib import Path
 
 
+DEFAULT_MAX_AREA = 480 * 832
+
+
+def is_cuda_oom_error(message: str) -> bool:
+    """Return whether a child runner failure is a CUDA out-of-memory failure."""
+    normalized = message.lower()
+    return (
+        "out of memory" in normalized
+        or "cuda_error_out_of_memory" in normalized
+        or "cublas_status_alloc_failed" in normalized
+    )
+
+
+def configured_areas(args: argparse.Namespace) -> tuple[int, ...]:
+    """Return the requested area followed by configured OOM fallbacks."""
+    areas = (args.max_area or DEFAULT_MAX_AREA, *args.max_area_fallback)
+    if any(area <= 0 for area in areas):
+        raise ValueError("configured max areas must be greater than zero")
+    if len(set(areas)) != len(areas):
+        raise ValueError("configured max areas must be unique")
+    if any(areas[index + 1] >= areas[index] for index in range(len(areas) - 1)):
+        raise ValueError("fallback max areas must strictly decrease")
+    return areas
+
+
 def duration_to_frames(seconds: float, fps: int = 16) -> int:
     """Return the smallest Wan-compatible 4n+1 frame count covering duration."""
     if not math.isfinite(seconds) or seconds <= 0:
@@ -31,6 +56,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpu0-memory-gib", type=float)
     parser.add_argument("--gpu1-memory-gib", type=float)
     parser.add_argument("--max-area", type=int)
+    parser.add_argument(
+        "--max-area-fallback",
+        type=int,
+        action="append",
+        default=[],
+        help="Lower pixel area to try after CUDA OOM. Repeat in descending order.",
+    )
     parser.add_argument("--memory-telemetry", action="store_true")
     parser.add_argument(
         "--lightning",
@@ -84,8 +116,6 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         command.extend(["--gpu0-memory-gib", str(args.gpu0_memory_gib)])
     if args.gpu1_memory_gib is not None:
         command.extend(["--gpu1-memory-gib", str(args.gpu1_memory_gib)])
-    if args.max_area is not None:
-        command.extend(["--max-area", str(args.max_area)])
     if args.memory_telemetry:
         command.append("--memory-telemetry")
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -96,9 +126,45 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         flush=True,
     )
     # Reserve wrapper stdout for READY/JSON lines consumed by LocalVideoGenerator.
-    subprocess.run(command, cwd=repo, check=True, stdout=sys.stderr, stderr=sys.stderr)
-    if not output.is_file() or output.stat().st_size == 0:
-        raise RuntimeError(f"Wan completed without a non-empty video: {output}")
+    requested_area = task.get("max_area", args.max_area)
+    area_args = argparse.Namespace(
+        max_area=int(requested_area) if requested_area is not None else None,
+        max_area_fallback=args.max_area_fallback,
+    )
+    areas = configured_areas(area_args)
+    for attempt, area in enumerate(areas):
+        attempt_command = [*command, "--max-area", str(area)]
+        try:
+            subprocess.run(
+                attempt_command,
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as error:
+            details = (error.stderr or error.stdout or "").strip()
+            if details:
+                print(details, file=sys.stderr, flush=True)
+            if is_cuda_oom_error(details) and attempt + 1 < len(areas):
+                print(
+                    f"CUDA OOM at area {area}; retrying at area {areas[attempt + 1]}.",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                output.unlink(missing_ok=True)
+                continue
+            raise RuntimeError(
+                f"Wan generation failed at selected area {area} "
+                f"(exit status {error.returncode}): {details}"
+            ) from error
+        if not output.is_file() or output.stat().st_size == 0:
+            raise RuntimeError(
+                f"Wan completed without a non-empty video at selected area {area}: {output}"
+            )
+        print(f"Selected Wan area {area} for {clip_name or output.name}.", file=sys.stderr)
+        return
+    raise AssertionError("generation area fallback loop was empty")
 
 
 def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:

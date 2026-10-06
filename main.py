@@ -121,7 +121,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--wan-max-area",
         type=int,
         default=None,
-        help="Wan pixel-area override for lower-resolution fallback shots.",
+        help="Requested Wan pixel area. CUDA OOMs can fall back to lower configured areas.",
+    )
+    parser.add_argument(
+        "--wan-fallback-area",
+        type=int,
+        action="append",
+        default=[],
+        help="Lower Wan pixel area to try after CUDA OOM. Repeat in descending order.",
     )
     parser.add_argument(
         "--wan-memory-telemetry",
@@ -197,6 +204,8 @@ def main(argv: list[str] | None = None) -> int:
             *(["--memory-telemetry"] if args.wan_memory_telemetry else []),
         ],
         working_directory=args.generator_working_dir,
+        max_area=args.wan_max_area,
+        fallback_areas=tuple(args.wan_fallback_area),
     )
 
     pipeline = ExperimentPipeline(config=config, video_generator=video_generator)
