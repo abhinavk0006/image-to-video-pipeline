@@ -112,14 +112,13 @@ For activation-memory experiments, pass `--wan-max-area 345600` (or another
 positive pixel area) to the Kaggle command and `--wan-memory-telemetry` to log
 allocated, reserved, and free memory on each visible GPU.
 
-**Runtime and validation:** the successful Kaggle check so far was a 17-frame
-(about one-second) clip. Wan loads and converts both experts for every clip in
-this adapter, so multi-clip runs repeat several minutes of setup per clip; the
-existing pipeline daemon keeps the adapter process alive, but does not keep the
-Wan model loaded. A five-second clip maps to 81 frames and has not been tested
-for runtime or memory on T4. Start with one short clip; do not assume a set of
-four or five long clips will finish within one session. Resume support skips
-clips whose output files already exist.
+**Runtime and validation:** use the persistent Wan daemon for multi-clip Kaggle
+runs. It loads the shared T5/VAE infrastructure once and retains the last
+staged expert between requests; switching noise phases still evicts and
+reloads the other expert to stay within two T4 GPUs. This avoids repeating all
+model setup while preserving the existing peak-VRAM strategy. The daemon keeps
+stdout reserved for `READY` and one JSON response per request, with diagnostics
+on stderr. Resume support skips clips whose output files already exist.
 
 Outputs are written under `/kaggle/working/pipeline_outputs/<experiment>/`;
 download `final_video.mp4` from Kaggle's Output panel after the run.

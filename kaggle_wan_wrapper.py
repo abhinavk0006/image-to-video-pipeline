@@ -101,18 +101,61 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         raise RuntimeError(f"Wan completed without a non-empty video: {output}")
 
 
+def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
+    """Build the long-lived Wan runner command used by wrapper daemon mode."""
+    repo = args.wan_repo_dir.resolve()
+    runner = repo / "quantization" / "kaggle_generate_video.py"
+    command = [
+        sys.executable, str(runner), "--daemon",
+        "--steps", "4", "--lightning",
+        "--max-memory-gib", str(args.max_memory_gib),
+    ]
+    if args.gpu0_memory_gib is not None:
+        command.extend(["--gpu0-memory-gib", str(args.gpu0_memory_gib)])
+    if args.gpu1_memory_gib is not None:
+        command.extend(["--gpu1-memory-gib", str(args.gpu1_memory_gib)])
+    if args.max_area is not None:
+        command.extend(["--max-area", str(args.max_area)])
+    if args.memory_telemetry:
+        command.append("--memory-telemetry")
+    return command
+
+
 def daemon(args: argparse.Namespace) -> int:
-    print("READY", flush=True)
-    for line in sys.stdin:
-        try:
+    command = build_wan_daemon_command(args)
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=args.wan_repo_dir.resolve(),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True,
+            stderr=sys.stderr,
+        )
+        ready_line = process.stdout.readline()
+        if ready_line.strip() != "READY":
+            raise RuntimeError(f"Wan daemon failed to start: {ready_line.strip()}")
+        print("READY", flush=True)
+        for line in sys.stdin:
             task = json.loads(line)
             if task.get("action") == "exit":
-                return 0
-            run_clip(args, task)
-            print(json.dumps({"status": "success"}), flush=True)
-        except Exception as error:
-            print(json.dumps({"status": "error", "error": str(error)}), flush=True)
-    return 0
+                process.stdin.write(json.dumps({"action": "exit"}) + "\n")
+                process.stdin.flush()
+                process.wait(timeout=30)
+                return process.returncode or 0
+            process.stdin.write(json.dumps(task) + "\n")
+            process.stdin.flush()
+            response = process.stdout.readline()
+            if not response:
+                raise RuntimeError("Wan daemon terminated during clip generation")
+            print(response.strip(), flush=True)
+        return 0
+    except Exception as error:
+        print(json.dumps({"status": "error", "error": str(error)}), flush=True)
+        return 1
+    finally:
+        if "process" in locals() and process.poll() is None:
+            process.kill()
 
 
 def main() -> int:
