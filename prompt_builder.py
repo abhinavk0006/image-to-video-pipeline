@@ -46,8 +46,12 @@ class PromptBuilder:
 		]
 		prompt = _join_sentences(parts)
 
-		if clip.motion_prompt.image_prompt:
-			prompt = _join_sentences([prompt, clip.motion_prompt.image_prompt])
+		if clip.image_prompt or clip.motion_prompt.image_prompt:
+			prompt = _join_sentences([
+				prompt,
+				clip.image_prompt,
+				clip.motion_prompt.image_prompt,
+			])
 
 		return prompt
 

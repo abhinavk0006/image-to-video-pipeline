@@ -54,6 +54,11 @@ class Clip:
     continuity_required: Optional[bool] = None
     reference_policy: str = ""
     reference_clip: str = ""
+    reference_mode: str = "independent"
+    needs_reference_image: bool = True
+    handoff_policy: str = "none"
+    handoff_entity: str = ""
+    image_prompt: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

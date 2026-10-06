@@ -72,6 +72,18 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         continuity_required=bool(continuity) if continuity is not None else None,
         reference_policy=str(clip_data.get("reference_policy", "")),
         reference_clip=str(clip_data.get("reference_clip", "")),
+        reference_mode=str(
+            clip_data.get(
+                "reference_mode",
+                "chained" if clip_data.get("reference_clip") else "independent",
+            )
+        ),
+        needs_reference_image=bool(
+            clip_data.get("needs_reference_image", not clip_data.get("reference_clip"))
+        ),
+        handoff_policy=str(clip_data.get("handoff_policy", "none")),
+        handoff_entity=str(clip_data.get("handoff_entity", "")),
+        image_prompt=str(clip_data.get("image_prompt", "")),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 

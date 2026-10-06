@@ -108,6 +108,16 @@ class ExperimentPipeline:
 							f"'{clip.reference_clip}'"
 						)
 					reference_frame = generated_frames[clip.reference_clip]
+				if clip.reference_mode == "chained" and not clip.reference_clip:
+					raise PipelineError(
+						f"Clip '{clip_name}' declares chained reference_mode "
+						"but has no reference_clip"
+					)
+				if clip.reference_mode not in {"independent", "chained"}:
+					raise PipelineError(
+						f"Clip '{clip_name}' has invalid reference_mode "
+						f"'{clip.reference_mode}'"
+					)
 
 				prompt_bundle = self.prompt_builder.build_prompt_bundle(experiment, clip)
 				image_prompt_path = self._write_clip_prompts(clip_name, prompt_bundle.image_prompt, prompt_bundle.motion_prompt)
