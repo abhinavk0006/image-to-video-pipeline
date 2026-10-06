@@ -1,8 +1,8 @@
 """Adapt the pipeline JSON-lines generator protocol to Wan's Kaggle runner.
 
-This wrapper is intended for Kaggle's two-GPU T4 session. Wan's streamed INT8
-runner is a one-video process, so each pipeline clip starts a fresh child
-process and repeats model setup/conversion.
+This wrapper is intended for Kaggle's two-GPU T4 session. In daemon mode it
+keeps the Wan runner alive across pipeline clips so model setup/conversion is
+reused. Stdout is reserved for the JSON-lines protocol; progress stays on stderr.
 """
 
 from __future__ import annotations
@@ -189,6 +189,12 @@ def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
 
 def daemon(args: argparse.Namespace) -> int:
     command = build_wan_daemon_command(args)
+    print(
+        "[wan-wrapper] starting persistent Wan worker; model initialization may "
+        "take several minutes before READY.",
+        file=sys.stderr,
+        flush=True,
+    )
     try:
         process = subprocess.Popen(
             command,
@@ -198,9 +204,19 @@ def daemon(args: argparse.Namespace) -> int:
             text=True,
             stderr=sys.stderr,
         )
+        print(
+            "[wan-wrapper] waiting for Wan worker READY...",
+            file=sys.stderr,
+            flush=True,
+        )
         ready_line = process.stdout.readline()
         if ready_line.strip() != "READY":
             raise RuntimeError(f"Wan daemon failed to start: {ready_line.strip()}")
+        print(
+            "[wan-wrapper] Wan worker READY; accepting persistent clip requests.",
+            file=sys.stderr,
+            flush=True,
+        )
         print("READY", flush=True)
         for line in sys.stdin:
             task = json.loads(line)
@@ -209,6 +225,11 @@ def daemon(args: argparse.Namespace) -> int:
                 process.stdin.flush()
                 process.wait(timeout=30)
                 return process.returncode or 0
+            print(
+                f"[wan-wrapper] dispatching {task.get('clip_name', 'unnamed clip')}",
+                file=sys.stderr,
+                flush=True,
+            )
             process.stdin.write(json.dumps(task) + "\n")
             process.stdin.flush()
             response = process.stdout.readline()
