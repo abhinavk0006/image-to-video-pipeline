@@ -170,6 +170,8 @@ Expert conversion can succeed while the first denoising allocation still fails. 
 
 The same persistent daemon, references, and chain inputs are reused. Non-OOM failures remain fatal rather than being hidden by a fallback.
 
+The fallback also handles a daemon that exits before returning a normal task response. Wan2.2 now reports Python-level CUDA OOM as a typed fatal response with `error_type="cuda_oom"` and exit code `75`, flushes the JSON response, and writes the final diagnostic to stderr. The pipeline drains and preserves daemon stderr, includes the exit code and diagnostic in its error, and restarts only the daemon for the next fallback area when the diagnostic explicitly identifies CUDA OOM. EOF, an unexplained nonzero exit, or an ordinary task error remains fatal; the pipeline never retries every daemon crash indiscriminately.
+
 ### Kaggle branch and commit confusion
 
 The Kaggle setup originally fetched only `origin/main`, while the required fixes lived on feature branches. The notebook now fetches the correct ref for each repository before checking out the pinned commit:
@@ -186,8 +188,8 @@ The end-to-end notebook currently pins:
 
 | Repository | Ref | Commit |
 |---|---|---|
-| `Wan2.2` | `feature/persistent-wan-worker` | `3558b40` |
-| `image-to-video-pipeline` | `feature/persistent-wan-worker` | `7a940bc` |
+| `Wan2.2` | `feature/persistent-wan-worker` | `43be1f5` |
+| `image-to-video-pipeline` | `feature/persistent-wan-worker` | `ebf1d33` |
 | `Edu-video-gen-dataset` | `feature/structured-reference-plans` | `53b5222` |
 
 The notebook setup correction and targeted RAG query are also on `image-to-video-pipeline`'s persistent branch:
@@ -204,6 +206,7 @@ c370118  Use targeted salt analysis RAG query
 - VAE CPU offload adds transfer time and may make short clips slower.
 - Decode-time memory must be measured separately from denoising memory.
 - The mapper's budget is a placement ceiling; attention, dequantization, CUDA allocator fragmentation, and activations can still exceed it.
+- An OS-level `SIGKILL` cannot flush a typed response. If that happens, the parent can preserve only EOF, exit status, and any already-drained stderr, so the event remains an abnormal crash rather than an automatically assumed OOM.
 - The notebook's card renderer is currently notebook-local Pillow code rather than a reusable presentation package or true LaTeX renderer.
 - The current TF-IDF retriever is lexical. Semantic retrieval and stronger experiment/entity validation remain future improvements.
 - Canonical dataset records still need broader observation-field cleanup and validation.
@@ -229,7 +232,7 @@ c370118  Use targeted salt analysis RAG query
 --generator-arg=--memory-telemetry
 ```
 
-8. Confirm logs show both expert conversions, VAE offload/restore, and any selected fallback area.
+8. Confirm logs show both expert conversions, VAE offload/restore, and any selected fallback area. If native inference OOMs, confirm the daemon reports `error_type=cuda_oom`/exit code `75` and the pipeline retries the next area.
 9. Confirm four clips exist before running final composition.
 10. Review the final stitched video and retain telemetry for future budget tuning.
 
