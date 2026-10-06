@@ -53,18 +53,25 @@ class FrameExtractor:
 
 		destination_path.parent.mkdir(parents=True, exist_ok=True)
 
+		frame_count = self._get_frame_count(input_path)
+		fps = self._get_frame_rate(input_path)
+		frames_back = max(1, int(round(offset_seconds * fps)))
+		target_index = max(0, frame_count - frames_back - 1)
+
 		ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-		# Seek relative to the end so rounded or unreliable container duration
-		# metadata cannot place the seek beyond the available frames.
+		# Select a decoded frame by index. This avoids unreliable MP4 duration
+		# metadata and timestamp seeks that can land outside the frame range.
 		command = [
 			ffmpeg_exe,
 			"-y",
-			"-sseof",
-			f"-{max(offset_seconds, 0.001):.3f}",
 			"-i",
 			str(input_path),
+			"-vf",
+			f"select=eq(n\\,{target_index})",
 			"-frames:v",
 			"1",
+			"-vsync",
+			"0",
 			"-f",
 			"image2",
 			str(destination_path),
@@ -94,6 +101,54 @@ class FrameExtractor:
 			)
 
 		return destination_path
+
+	def _get_frame_count(self, video_path: Path) -> int:
+		"""Return the number of decodable video frames."""
+		command = [
+			"ffprobe",
+			"-v",
+			"error",
+			"-count_frames",
+			"-select_streams",
+			"v:0",
+			"-show_entries",
+			"stream=nb_read_frames",
+			"-of",
+			"default=noprint_wrappers=1:nokey=1",
+			str(video_path),
+		]
+		try:
+			result = subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
+			count = int(result.stdout.strip())
+		except (FileNotFoundError, subprocess.CalledProcessError, ValueError) as error:
+			raise FrameExtractionError(f"Could not count video frames for {video_path}") from error
+		if count < 1:
+			raise FrameExtractionError(f"Video contains no decodable frames: {video_path}")
+		return count
+
+	def _get_frame_rate(self, video_path: Path) -> float:
+		"""Return the source frame rate, falling back to 16 FPS."""
+		command = [
+			"ffprobe",
+			"-v",
+			"error",
+			"-select_streams",
+			"v:0",
+			"-show_entries",
+			"stream=avg_frame_rate",
+			"-of",
+			"default=noprint_wrappers=1:nokey=1",
+			str(video_path),
+		]
+		try:
+			result = subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
+			numerator, denominator = result.stdout.strip().split("/", 1)
+			rate = float(numerator) / float(denominator)
+			if rate > 0:
+				return rate
+		except (FileNotFoundError, subprocess.CalledProcessError, ValueError, ZeroDivisionError):
+			pass
+		return 16.0
 
 	def _get_video_duration(self, video_path: Path) -> float:
 		# Prefer ffprobe when available, otherwise fall back to ffmpeg's stderr parsing
