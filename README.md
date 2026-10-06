@@ -154,6 +154,13 @@ The original `wan_local_wrapper.py` targets its separate local Wan setup. For Ka
 
 ## Structured state/action inputs
 
+Natural-language `--query` requests use the local `knowledge/` RAG records first.
+Only a miss loads the Qwen fallback. The fallback is normalized into the same
+experiment/video contract as stored records: clip duration, state/action,
+reference, handoff, `procedure_text`, and `observation_text` are retained for
+later deterministic card rendering. Invalid JSON or a missing clip list fails
+loudly instead of silently producing a clips-only plan.
+
 New experiment inputs can describe each step explicitly:
 
 ```json
