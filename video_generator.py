@@ -7,6 +7,7 @@ underlying generation script remains swappable.
 
 from __future__ import annotations
 
+import queue
 import subprocess
 import sys
 import threading
@@ -92,8 +93,10 @@ class LocalVideoGenerator:
 					)
 					self._stderr_thread.start()
 					
-					# Read READY line to ensure daemon is active
-					ready_line = self._process.stdout.readline()
+					# Read READY without blocking the pipeline forever. Wan initialization can
+					# legitimately take several minutes, so this is a heartbeat interval rather
+					# than a hard startup timeout.
+					ready_line = self._read_daemon_stdout("startup")
 					if ready_line.strip() != "READY":
 						self._use_daemon = False
 						if self._process:
@@ -132,7 +135,7 @@ class LocalVideoGenerator:
 							daemon=True,
 						)
 						self._stderr_thread.start()
-						if self._process.stdout.readline().strip() != "READY":
+						if self._read_daemon_stdout("restart").strip() != "READY":
 							raise VideoGenerationError(
 								"Video generation daemon failed to restart."
 							)
@@ -151,7 +154,10 @@ class LocalVideoGenerator:
 						self._process.stdin.write(json.dumps(task) + "\n")
 						self._process.stdin.flush()
 
-						response_line = self._process.stdout.readline()
+						response_line = self._read_daemon_stdout(
+							f"clip {request.clip_name or output_video_path.name} at area "
+							f"{area if area is not None else 'default'}"
+						)
 						if not response_line:
 							diagnostics = self._daemon_diagnostics()
 							was_oom = is_cuda_oom_error(diagnostics)
@@ -279,7 +285,49 @@ class LocalVideoGenerator:
 		if stream is None:
 			return
 		for line in stream:
-			self._stderr_lines.append(line.rstrip())
+			line = line.rstrip()
+			self._stderr_lines.append(line)
+			# Wan's useful progress/diagnostics are intentionally on stderr because
+			# stdout is reserved for the JSON-lines control protocol. Forward them
+			# live so Kaggle users can see that the persistent worker is alive.
+			if line:
+				print(f"[wan-daemon] {line}", file=sys.stderr, flush=True)
+
+	def _read_daemon_stdout(self, phase: str) -> str:
+		"""Read one protocol line while emitting periodic liveness heartbeats."""
+		if self._process is None or self._process.stdout is None:
+			raise VideoGenerationError("Video generation daemon has no stdout pipe")
+
+		result: queue.Queue[str] = queue.Queue(maxsize=1)
+
+		def reader() -> None:
+			try:
+				line = self._process.stdout.readline()
+				result.put(line)
+			except Exception as error:
+				result.put("")
+				print(
+					f"[wan-daemon] stdout reader failed during {phase}: {error}",
+					file=sys.stderr,
+					flush=True,
+				)
+
+		thread = threading.Thread(target=reader, daemon=True)
+		thread.start()
+		while True:
+			try:
+				return result.get(timeout=30.0)
+			except queue.Empty:
+				process = self._process
+				exit_code = process.poll() if process is not None else None
+				diagnostics = self._daemon_diagnostics()
+				print(
+					f"[wan-daemon] still waiting for {phase} response "
+					f"(process exit={exit_code if exit_code is not None else 'running'}). "
+					f"Recent diagnostics: {diagnostics[-1000:] if diagnostics else 'none'}",
+					file=sys.stderr,
+					flush=True,
+				)
 
 	def _daemon_diagnostics(self) -> str:
 		if self._stderr_thread is not None:
