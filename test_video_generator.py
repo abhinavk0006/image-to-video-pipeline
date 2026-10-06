@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 import json
+import io
 from pathlib import Path
 from unittest import mock
 
@@ -102,6 +103,7 @@ class VideoGeneratorFallbackTests(unittest.TestCase):
 				self.stdin = FakeStdin()
 				self.stdin.output = output
 				self.stdout = FakeStdout()
+				self.stderr = io.StringIO("")
 				self.killed = False
 
 			def kill(self):
@@ -117,6 +119,70 @@ class VideoGeneratorFallbackTests(unittest.TestCase):
 			self.assertEqual(generator.generate_clip_video(self.request), self.output)
 		self.assertFalse(process.killed)
 		self.assertEqual(process.stdin.writes, 2)
+
+	def test_dead_daemon_retries_only_with_oom_diagnostics(self) -> None:
+		class DeadProcess:
+			def __init__(self, diagnostics):
+				self.stdin = mock.Mock()
+				self.stdout = io.StringIO("READY\n")
+				self.stderr = io.StringIO(diagnostics + "\n")
+				self.returncode = 137
+
+			def poll(self):
+				return self.returncode
+
+			def kill(self):
+				pass
+
+		class LiveProcess:
+			def __init__(self, output):
+				self.stdin = mock.Mock()
+				self.stdin.write.side_effect = lambda value: (
+					output.write_bytes(b"video") or len(value)
+				)
+				self.stdout = io.StringIO('READY\n{"status":"success"}\n')
+				self.stderr = io.StringIO("")
+
+			def poll(self):
+				return None
+
+			def kill(self):
+				pass
+
+		processes = iter([
+			DeadProcess("torch.cuda.OutOfMemoryError: CUDA out of memory"),
+			LiveProcess(self.output),
+		])
+		generator = LocalVideoGenerator(
+			script_path="generate.py",
+			max_area=399360,
+			fallback_areas=(200704,),
+		)
+		with mock.patch(
+			"video_generator.subprocess.Popen", side_effect=lambda *args, **kwargs: next(processes)
+		):
+			self.assertEqual(generator.generate_clip_video(self.request), self.output)
+
+	def test_dead_daemon_without_oom_diagnostics_is_fatal(self) -> None:
+		class DeadProcess:
+			stdin = mock.Mock()
+			stdout = io.StringIO("READY\n")
+			stderr = io.StringIO("segmentation fault\n")
+
+			def poll(self):
+				return 139
+
+			def kill(self):
+				pass
+
+		generator = LocalVideoGenerator(
+			script_path="generate.py",
+			max_area=399360,
+			fallback_areas=(200704,),
+		)
+		with mock.patch("video_generator.subprocess.Popen", return_value=DeadProcess()):
+			with self.assertRaisesRegex(VideoGenerationError, "segmentation fault"):
+				generator.generate_clip_video(self.request)
 
 	def test_areas_must_decrease(self) -> None:
 		generator = LocalVideoGenerator(max_area=100, fallback_areas=(100,))

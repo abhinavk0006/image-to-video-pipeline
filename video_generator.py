@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
@@ -53,6 +54,8 @@ class LocalVideoGenerator:
 	fallback_areas: tuple[int, ...] = ()
 	_process: subprocess.Popen | None = field(default=None, init=False, repr=False)
 	_use_daemon: bool = field(default=True, init=False)
+	_stderr_lines: list[str] = field(default_factory=list, init=False, repr=False)
+	_stderr_thread: threading.Thread | None = field(default=None, init=False, repr=False)
 
 	def generate_clip_video(self, request: VideoGenerationRequest) -> Path:
 		"""Run the configured local command to produce one clip video."""
@@ -73,13 +76,21 @@ class LocalVideoGenerator:
 				# Start the daemon process
 				command = [self.executable, self.script_path, *self.base_arguments, "--daemon"]
 				try:
+					self._stderr_lines = []
 					self._process = subprocess.Popen(
 						command,
 						stdin=subprocess.PIPE,
 						stdout=subprocess.PIPE,
+						stderr=subprocess.PIPE,
 						text=True,
 						cwd=str(self.working_directory) if self.working_directory is not None else None,
 					)
+					self._stderr_thread = threading.Thread(
+						target=self._drain_stderr,
+						args=(self._process.stderr,),
+						daemon=True,
+					)
+					self._stderr_thread.start()
 					
 					# Read READY line to ensure daemon is active
 					ready_line = self._process.stdout.readline()
@@ -101,6 +112,30 @@ class LocalVideoGenerator:
 				import json
 				motion_prompt = request.prompt_bundle.motion_prompt or self._compose_motion_prompt(request.prompt_bundle)
 				for attempt, area in enumerate(areas):
+					if self._process is None:
+						self._use_daemon = True
+						# The failed daemon can only be replaced after an OOM-qualified
+						# termination; the response path below decides that.
+						command = [self.executable, self.script_path, *self.base_arguments, "--daemon"]
+						self._stderr_lines = []
+						self._process = subprocess.Popen(
+							command,
+							stdin=subprocess.PIPE,
+							stdout=subprocess.PIPE,
+							stderr=subprocess.PIPE,
+							text=True,
+							cwd=str(self.working_directory) if self.working_directory is not None else None,
+						)
+						self._stderr_thread = threading.Thread(
+							target=self._drain_stderr,
+							args=(self._process.stderr,),
+							daemon=True,
+						)
+						self._stderr_thread.start()
+						if self._process.stdout.readline().strip() != "READY":
+							raise VideoGenerationError(
+								"Video generation daemon failed to restart."
+							)
 					task = {
 						"input_image": str(input_image_path),
 						"output_video": str(output_video_path),
@@ -118,8 +153,25 @@ class LocalVideoGenerator:
 
 						response_line = self._process.stdout.readline()
 						if not response_line:
+							diagnostics = self._daemon_diagnostics()
+							was_oom = is_cuda_oom_error(diagnostics)
+							exit_code = self._process.poll()
+							self._process = None
+							if was_oom and attempt + 1 < len(areas):
+								print(
+									f"CUDA OOM daemon termination at area "
+									f"{area if area is not None else 'default'} "
+									f"(exit code {exit_code}); retrying at area "
+									f"{areas[attempt + 1]}. Diagnostics: {diagnostics}",
+									file=sys.stderr,
+								)
+								output_video_path.unlink(missing_ok=True)
+								continue
 							raise VideoGenerationError(
-								"Video generation daemon crashed during generation."
+								f"Video generation daemon terminated at area "
+								f"{area if area is not None else 'default'} "
+								f"(exit code {exit_code}). Diagnostics: "
+								f"{diagnostics or 'none'}"
 							)
 
 						response = json.loads(response_line)
@@ -137,6 +189,10 @@ class LocalVideoGenerator:
 							return output_video_path
 
 						error_message = str(response.get("error", "unknown daemon error"))
+						error_message = (
+							f"{error_message}; daemon stderr: "
+							f"{self._daemon_diagnostics()}"
+						)
 						if is_cuda_oom_error(error_message) and attempt + 1 < len(areas):
 							print(
 								f"CUDA OOM at area {area if area is not None else 'default'}; "
@@ -217,6 +273,18 @@ class LocalVideoGenerator:
 			return output_video_path
 
 		raise AssertionError("generation area fallback loop was empty")
+
+	def _drain_stderr(self, stream) -> None:
+		"""Continuously capture daemon diagnostics without blocking stdout replies."""
+		if stream is None:
+			return
+		for line in stream:
+			self._stderr_lines.append(line.rstrip())
+
+	def _daemon_diagnostics(self) -> str:
+		if self._stderr_thread is not None:
+			self._stderr_thread.join(timeout=1)
+		return "\n".join(line for line in self._stderr_lines if line).strip()
 
 	def stop_daemon(self) -> None:
 		"""Exit the daemon process cleanly."""

@@ -118,6 +118,16 @@ daemon without restarting the pipeline; reference and chained-frame inputs are
 unchanged. Only CUDA OOM failures trigger this fallback, and logs identify the
 selected area (or the final area on failure).
 
+The daemon fallback contract is intentionally strict: the Wan child must write
+its CUDA OOM traceback/diagnostic to stderr and exit nonzero if it dies before
+returning a JSON response. The Kaggle wrapper forwards that stderr and reports
+the child exit code; the pipeline retries only when the combined diagnostics
+contain a recognized CUDA OOM marker. A bare signal, nonzero exit code, or
+ordinary crash is fatal and is not retried. No Wan2.2 code change is required
+unless its daemon suppresses CUDA OOM diagnostics; in that case it must preserve
+the exception text on stderr and return a nonzero exit code (or return the
+existing `{"status":"error","error":"..."}` JSON response).
+
 **Runtime and validation:** use the persistent Wan daemon for multi-clip Kaggle
 runs. It loads the shared T5/VAE infrastructure once and retains the last
 staged expert between requests; switching noise phases still evicts and

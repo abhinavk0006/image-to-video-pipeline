@@ -213,7 +213,12 @@ def daemon(args: argparse.Namespace) -> int:
             process.stdin.flush()
             response = process.stdout.readline()
             if not response:
-                raise RuntimeError("Wan daemon terminated during clip generation")
+                exit_code = process.poll()
+                diagnostics = (
+                    f"Wan child daemon exited with code {exit_code}. "
+                    "The child writes CUDA/runtime diagnostics to this wrapper's stderr."
+                )
+                raise RuntimeError(diagnostics)
             print(response.strip(), flush=True)
         return 0
     except Exception as error:
