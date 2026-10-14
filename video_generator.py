@@ -58,6 +58,58 @@ class LocalVideoGenerator:
 	_stderr_lines: list[str] = field(default_factory=list, init=False, repr=False)
 	_stderr_thread: threading.Thread | None = field(default=None, init=False, repr=False)
 
+	def prepare_prompts(self, prompts: Sequence[dict[str, str]]) -> bool:
+		"""Pre-encode Wan text contexts before video generation when daemon mode supports it."""
+		if not self._use_daemon or not self.script_path or not prompts:
+			return False
+		if self._process is None:
+			command = [self.executable, self.script_path, *self.base_arguments, "--daemon"]
+			try:
+				self._stderr_lines = []
+				self._process = subprocess.Popen(
+					command,
+					stdin=subprocess.PIPE,
+					stdout=subprocess.PIPE,
+					stderr=subprocess.PIPE,
+					text=True,
+					cwd=str(self.working_directory) if self.working_directory is not None else None,
+				)
+				self._stderr_thread = threading.Thread(
+					target=self._drain_stderr,
+					args=(self._process.stderr,),
+					daemon=True,
+				)
+				self._stderr_thread.start()
+				if self._read_daemon_stdout("prompt-cache startup").strip() != "READY":
+					raise VideoGenerationError("Wan daemon did not become ready for prompt preparation")
+			except Exception:
+				self._use_daemon = False
+				if self._process is not None:
+					self._process.kill()
+					self._process = None
+				raise
+		if self._process is None or self._process.stdin is None:
+			raise VideoGenerationError("Wan daemon is unavailable for prompt preparation")
+		import json
+		try:
+			self._process.stdin.write(json.dumps({"action": "prepare_prompts", "prompts": list(prompts)}) + "\n")
+			self._process.stdin.flush()
+			response_line = self._read_daemon_stdout("T5 prompt preparation")
+			response = json.loads(response_line)
+		except Exception as error:
+			raise VideoGenerationError(
+				f"Wan prompt preparation failed: {error}; daemon stderr: {self._daemon_diagnostics()}"
+			) from error
+		if response.get("status") != "success":
+			raise VideoGenerationError(
+				f"Wan prompt preparation failed: {response.get('error', 'unknown error')}"
+			)
+		print(
+			f"Prepared {response.get('prepared_prompts', len(prompts))} clip prompt pairs; T5 is released before denoising.",
+			file=sys.stderr,
+		)
+		return True
+
 	def generate_clip_video(self, request: VideoGenerationRequest) -> Path:
 		"""Run the configured local command to produce one clip video."""
 
@@ -146,6 +198,7 @@ class LocalVideoGenerator:
 						"clip_duration": request.prompt_bundle.clip_duration_seconds,
 						"negative_prompt": request.prompt_bundle.negative_prompt,
 						"clip_name": request.clip_name,
+						"prompt_cache_key": request.clip_name,
 					}
 					if area is not None:
 						task["max_area"] = area
@@ -444,3 +497,4 @@ def generate_clip_video(
 		metadata=dict(metadata or {}),
 	)
 	return generator.generate_clip_video(request)
+
