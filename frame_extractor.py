@@ -1,16 +1,8 @@
-"""Extract the final frame from a generated video clip.
-
-This module stays intentionally small: it only reads a video file and writes
-the last frame to disk so the next clip can reuse it as input.
-"""
+"""Extract deterministic handoff frames from generated video clips."""
 
 from __future__ import annotations
 
-import subprocess
-try:
-	from imageio_ffmpeg import get_ffmpeg_exe
-except Exception:
-	get_ffmpeg_exe = None
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,17 +13,19 @@ class FrameExtractionError(RuntimeError):
 
 @dataclass(slots=True)
 class FrameExtractor:
-	"""Extracts the final frame from a clip using local ffmpeg tooling."""
+	"""Extract frames by decoding the stream, without ffprobe or timestamp seeks.
 
-	# small offset from end; larger than a few milliseconds to reliably hit a frame
+	Decoding sequentially avoids MP4 duration/index discrepancies at the end of
+	short generated clips. Only a small ring buffer is retained in memory.
+	"""
+
 	frame_offset_seconds: float = 0.50
+	default_fps: float = 16.0
 
 	def extract_last_frame(self, video_path: str | Path, output_path: str | Path) -> Path:
-		"""Save a stable near-end handoff frame to `output_path`."""
+		"""Save the default near-end handoff frame."""
 		return self.extract_frame_before_end(
-			video_path,
-			output_path,
-			offset_seconds=self.frame_offset_seconds,
+			video_path, output_path, offset_seconds=self.frame_offset_seconds
 		)
 
 	def extract_frame_before_end(
@@ -41,157 +35,65 @@ class FrameExtractor:
 		*,
 		offset_seconds: float,
 	) -> Path:
-		"""Save the frame `offset_seconds` before the end of a video."""
+		"""Save a decoded frame the requested number of seconds before EOF.
 
+		An offset of zero selects the final decoded frame. Positive offsets are
+		rounded to the nearest source frame, clamped to the first frame for clips
+		shorter than the requested offset.
+		"""
 		input_path = Path(video_path)
 		destination_path = Path(output_path)
-
-		if not input_path.exists():
+		if not input_path.is_file():
 			raise FrameExtractionError(f"Video file does not exist: {input_path}")
 		if offset_seconds < 0:
 			raise FrameExtractionError("Frame offset must be non-negative")
-
 		destination_path.parent.mkdir(parents=True, exist_ok=True)
-
-		frame_count = self._get_frame_count(input_path)
-		fps = self._get_frame_rate(input_path)
-		frames_back = max(1, int(round(offset_seconds * fps)))
-		target_index = max(0, frame_count - frames_back - 1)
-
-		ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-		# Select a decoded frame by index. This avoids unreliable MP4 duration
-		# metadata and timestamp seeks that can land outside the frame range.
-		command = [
-			ffmpeg_exe,
-			"-y",
-			"-i",
-			str(input_path),
-			"-vf",
-			f"select=eq(n\\,{target_index})",
-			"-frames:v",
-			"1",
-			"-vsync",
-			"0",
-			"-f",
-			"image2",
-			str(destination_path),
-		]
+		destination_path.unlink(missing_ok=True)
 
 		try:
-			result = subprocess.run(
-				command,
-				check=True,
-				capture_output=True,
-				text=True,
-				errors="replace",
-			)
-		except FileNotFoundError as error:
-			ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-			raise FrameExtractionError(f"{ffmpeg_exe} is not available on this system") from error
-		except subprocess.CalledProcessError as error:
+			import imageio_ffmpeg
+			from PIL import Image
+		except ImportError as error:
 			raise FrameExtractionError(
-				f"Failed to extract last frame from {input_path}: {error.stderr.strip()}"
+				"Frame extraction requires imageio-ffmpeg and Pillow; install them in the pipeline environment."
 			) from error
 
-		if not destination_path.exists():
-			stderr = result.stderr.strip() if "result" in locals() else ""
+		reader = None
+		try:
+			reader = imageio_ffmpeg.read_frames(str(input_path), pix_fmt="rgb24")
+			metadata = next(reader)
+			fps = float(metadata.get("fps") or self.default_fps)
+			if fps <= 0:
+				fps = self.default_fps
+			frames_back = max(0, int(round(offset_seconds * fps)))
+			window = deque(maxlen=frames_back + 1)
+			for frame in reader:
+				window.append(frame)
+			if not window:
+				raise FrameExtractionError(f"Video contains no decodable frames: {input_path}")
+			# With a full window, the oldest entry is exactly `frames_back` from EOF.
+			# If the clip is shorter than the requested offset, use its first frame.
+			selected = window[0]
+			Image.fromarray(selected).save(destination_path)
+		except FrameExtractionError:
+			raise
+		except Exception as error:
+			destination_path.unlink(missing_ok=True)
+			detail = str(error).strip() or type(error).__name__
 			raise FrameExtractionError(
-				f"Frame extraction completed but no file was written: "
-				f"{destination_path}. ffmpeg output: {stderr[-1000:]}"
-			)
+				f"Could not decode a frame {offset_seconds:g}s before EOF from {input_path}: {detail}"
+			) from error
+		finally:
+			if reader is not None:
+				reader.close()
 
+		if not destination_path.is_file() or destination_path.stat().st_size == 0:
+			raise FrameExtractionError(
+				f"Frame extraction produced no image at {destination_path}"
+			)
 		return destination_path
-
-	def _get_frame_count(self, video_path: Path) -> int:
-		"""Return the number of decodable video frames."""
-		command = [
-			"ffprobe",
-			"-v",
-			"error",
-			"-count_frames",
-			"-select_streams",
-			"v:0",
-			"-show_entries",
-			"stream=nb_read_frames",
-			"-of",
-			"default=noprint_wrappers=1:nokey=1",
-			str(video_path),
-		]
-		try:
-			result = subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
-			count = int(result.stdout.strip())
-		except (FileNotFoundError, subprocess.CalledProcessError, ValueError) as error:
-			raise FrameExtractionError(f"Could not count video frames for {video_path}") from error
-		if count < 1:
-			raise FrameExtractionError(f"Video contains no decodable frames: {video_path}")
-		return count
-
-	def _get_frame_rate(self, video_path: Path) -> float:
-		"""Return the source frame rate, falling back to 16 FPS."""
-		command = [
-			"ffprobe",
-			"-v",
-			"error",
-			"-select_streams",
-			"v:0",
-			"-show_entries",
-			"stream=avg_frame_rate",
-			"-of",
-			"default=noprint_wrappers=1:nokey=1",
-			str(video_path),
-		]
-		try:
-			result = subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
-			numerator, denominator = result.stdout.strip().split("/", 1)
-			rate = float(numerator) / float(denominator)
-			if rate > 0:
-				return rate
-		except (FileNotFoundError, subprocess.CalledProcessError, ValueError, ZeroDivisionError):
-			pass
-		return 16.0
-
-	def _get_video_duration(self, video_path: Path) -> float:
-		# Prefer ffprobe when available, otherwise fall back to ffmpeg's stderr parsing
-		ffprobe_cmd = [
-			"ffprobe",
-			"-v",
-			"error",
-			"-show_entries",
-			"format=duration",
-			"-of",
-			"default=noprint_wrappers=1:nokey=1",
-			str(video_path),
-		]
-
-		# Try ffprobe first
-		try:
-			result = subprocess.run(ffprobe_cmd, check=True, capture_output=True, text=True, errors="replace")
-			duration_text = result.stdout.strip()
-			if duration_text:
-				return float(duration_text)
-		except subprocess.CalledProcessError as error:
-			raise FrameExtractionError(
-				f"Failed to read duration for {video_path}: {error.stderr.strip()}"
-			) from error
-		except FileNotFoundError:
-			# ffprobe missing; try ffmpeg and parse stderr
-			ffmpeg_exe = get_ffmpeg_exe() if get_ffmpeg_exe is not None else "ffmpeg"
-			cmd = [ffmpeg_exe, "-i", str(video_path)]
-			try:
-				proc = subprocess.run(cmd, check=False, capture_output=True, text=True, errors="replace")
-			except FileNotFoundError as e:
-				raise FrameExtractionError("ffmpeg is not available on this system") from e
-			err = proc.stderr or proc.stdout
-			# look for Duration: HH:MM:SS.xx
-			import re
-			m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", err)
-			if not m:
-				raise FrameExtractionError(f"Could not determine duration for {video_path}")
-			h, mi, s = m.groups()
-			return float(h) * 3600.0 + float(mi) * 60.0 + float(s)
 
 
 def extract_last_frame(video_path: str | Path, output_path: str | Path) -> Path:
 	"""Convenience wrapper for extracting the last frame."""
-
 	return FrameExtractor().extract_last_frame(video_path, output_path)

@@ -59,6 +59,11 @@ class Clip:
     handoff_policy: str = "none"
     handoff_entity: str = ""
     image_prompt: str = ""
+    target_object: str = ""
+    preserve_objects: list[str] = field(default_factory=list)
+    quantity_constraint: str = ""
+    observable_target: str = ""
+    action_pacing: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

@@ -39,12 +39,17 @@ def resolve_handoff_offset_seconds(
 	*,
 	explicit_offset_seconds: float | None,
 	default_offset_seconds: float,
+	clip_duration_seconds: float | None = None,
 ) -> float:
 	"""Resolve the handoff frame timing from a clip's declared state policy."""
 	if mode == "near_end":
 		offset = default_offset_seconds
 	elif mode == "final":
 		offset = 0.05
+	elif mode == "mid":
+		if clip_duration_seconds is None or clip_duration_seconds <= 0:
+			raise PipelineError("handoff_mode='mid' requires a positive clip duration")
+		offset = clip_duration_seconds / 2
 	elif mode == "offset":
 		if explicit_offset_seconds is None:
 			raise PipelineError(
@@ -53,7 +58,7 @@ def resolve_handoff_offset_seconds(
 		offset = explicit_offset_seconds
 	else:
 		raise PipelineError(
-			"handoff_mode must be 'near_end', 'final', or 'offset'"
+			"handoff_mode must be 'near_end', 'mid', 'final', or 'offset'"
 		)
 	if offset < 0:
 		raise PipelineError("handoff_offset_seconds must be non-negative")
@@ -101,14 +106,18 @@ class ExperimentPipeline:
 				clip.name = clip_name
 				self._prepare_clip_directory(clip_name)
 				reference_frame = previous_frame_path
-				if clip.reference_clip:
+				explicit_input_available = any(
+					image_path and Path(image_path).is_file()
+					for image_path in (clip.input_frame_path, clip.generated_image_path)
+				)
+				if clip.reference_clip and not explicit_input_available:
 					if clip.reference_clip not in generated_frames:
 						raise PipelineError(
 							f"Clip '{clip_name}' references unavailable clip "
 							f"'{clip.reference_clip}'"
 						)
 					reference_frame = generated_frames[clip.reference_clip]
-				if clip.reference_mode == "chained" and not clip.reference_clip:
+				if clip.reference_mode == "chained" and not clip.reference_clip and not explicit_input_available:
 					raise PipelineError(
 						f"Clip '{clip_name}' declares chained reference_mode "
 						"but has no reference_clip"
@@ -149,24 +158,28 @@ class ExperimentPipeline:
 						)
 					)
 
-				handoff_offset = resolve_handoff_offset_seconds(
-					clip.handoff_mode,
-					explicit_offset_seconds=clip.handoff_offset_seconds,
-					default_offset_seconds=self.frame_extractor.frame_offset_seconds,
-				)
-				last_frame_path = self.frame_extractor.extract_frame_before_end(
-					generated_video_path,
-					self.config.get_clip_frame_file(clip_name),
-					offset_seconds=handoff_offset,
-				)
+				last_frame_path = None
+				if self._frame_is_needed(index, clip_name, experiment.clips):
+					handoff_offset = resolve_handoff_offset_seconds(
+						clip.handoff_mode,
+						explicit_offset_seconds=clip.handoff_offset_seconds,
+						default_offset_seconds=self.frame_extractor.frame_offset_seconds,
+						clip_duration_seconds=clip.motion_prompt.clip_duration_seconds,
+					)
+					last_frame_path = self.frame_extractor.extract_frame_before_end(
+						generated_video_path,
+						self.config.get_clip_frame_file(clip_name),
+						offset_seconds=handoff_offset,
+					)
 
 				clip.generated_image_path = str(clip_input_image_path)
 				clip.output_clip_path = str(generated_video_path)
-				clip.extracted_frame_path = str(last_frame_path)
+				clip.extracted_frame_path = str(last_frame_path) if last_frame_path is not None else None
 				# Keep the latest generated state available; each clip independently
 				# decides whether it is safe to consume it.
-				previous_frame_path = last_frame_path
-				generated_frames[clip_name] = last_frame_path
+				if last_frame_path is not None:
+					previous_frame_path = last_frame_path
+					generated_frames[clip_name] = last_frame_path
 				clip_video_paths.append(generated_video_path)
 
 			if not clip_video_paths:
@@ -177,6 +190,28 @@ class ExperimentPipeline:
 		finally:
 			if hasattr(self.video_generator, "stop_daemon"):
 				self.video_generator.stop_daemon()
+
+	def _frame_is_needed(self, index: int, clip_name: str, clips: list[Clip]) -> bool:
+		"""Only decode a handoff image when a later clip can consume it."""
+		for later_clip in clips[index + 1 :]:
+			if later_clip.reference_clip != clip_name:
+				continue
+			has_own_image = any(
+				image_path and Path(image_path).is_file()
+				for image_path in (later_clip.input_frame_path, later_clip.generated_image_path)
+			)
+			if not has_own_image:
+				return True
+		if index + 1 >= len(clips):
+			return False
+		next_clip = clips[index + 1]
+		if not clip_requires_continuity(self.config.continuity_mode, next_clip):
+			return False
+		explicit_images = (next_clip.input_frame_path, next_clip.generated_image_path)
+		return not any(
+			image_path and Path(image_path).is_file()
+			for image_path in explicit_images
+		)
 
 	def _prepare_directories(self) -> None:
 		Path(self.config.experiment_output_dir).mkdir(parents=True, exist_ok=True)
