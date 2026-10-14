@@ -51,6 +51,9 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
     if duration is not None:
         prompt_data = {**prompt_data, "clip_duration_seconds": duration}
     continuity = clip_data.get("continuity_required")
+    preserve_objects = clip_data.get("preserve_objects", [])
+    if isinstance(preserve_objects, str):
+        preserve_objects = [preserve_objects]
     return Clip(
         name=str(clip_data.get("name", f"clip_{index + 1}")),
         image_state=_parse_scene(scene_data),
@@ -84,6 +87,11 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         handoff_policy=str(clip_data.get("handoff_policy", "none")),
         handoff_entity=str(clip_data.get("handoff_entity", "")),
         image_prompt=str(clip_data.get("image_prompt", "")),
+        target_object=str(clip_data.get("target_object", "")),
+        preserve_objects=[str(item) for item in preserve_objects],
+        quantity_constraint=str(clip_data.get("quantity_constraint", "")),
+        observable_target=str(clip_data.get("observable_target", "")),
+        action_pacing=str(clip_data.get("action_pacing", "")),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 

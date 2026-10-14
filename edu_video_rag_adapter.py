@@ -93,6 +93,15 @@ def retrieve_pipeline_experiment(
         scene = scene_by_id.get(prompt.get("scene_id"), {})
         step_id = str(prompt.get("step_id", index))
         clip_name = f"clip_{index}_{_slug(step_id)}"
+        reference_image = str(prompt.get("starting_image", "")).strip()
+        local_reference = Path(reference_image).expanduser() if reference_image else None
+        local_reference = (
+            str(local_reference.resolve())
+            if local_reference is not None
+            and not reference_image.startswith(("http://", "https://"))
+            and local_reference.is_file()
+            else None
+        )
         clips.append(
             {
                 "name": clip_name,
@@ -111,12 +120,38 @@ def retrieve_pipeline_experiment(
                         prompt.get("duration_seconds") or clip_duration_seconds
                     ),
                 },
+                "state_before": prompt.get("state_before", ""),
+                "action": prompt.get("action", ""),
+                "state_after": prompt.get("state_after", ""),
+                "input_frame_path": local_reference,
+                "target_object": prompt.get("target_object", ""),
+                "preserve_objects": prompt.get("preserve_objects", []),
+                "quantity_constraint": prompt.get("quantity_constraint", ""),
+                "observable_target": prompt.get("observable_target", ""),
+                "action_pacing": prompt.get("action_pacing", "slow, single deliberate action"),
+                "manual_review_required": bool(prompt.get("manual_review_required", False)),
+                "manual_review_reasons": prompt.get("manual_review_reasons", []),
+                "requires_clip_split": bool(prompt.get("requires_clip_split", False)),
+                "continuity_required": bool(prompt.get("continuity_required", False)),
+                "reference_clip": prompt.get("reference_clip", ""),
+                "reference_mode": prompt.get("reference_mode", "independent"),
+                "handoff_mode": (
+                    prompt.get("handoff_policy")
+                    if prompt.get("handoff_policy") in {"mid", "near_end", "final", "offset"}
+                    else "mid" if prompt.get("reference_clip") else "near_end"
+                ),
+                "handoff_offset_seconds": prompt.get("handoff_offset_seconds"),
                 "metadata": {
                     "experiment_id": experiment_id,
                     "step_id": step_id,
                     "source_ids": prompt.get("source_ids", selected.get("source_ids", [])),
                     "retrieval_score": score,
                     "source_status": selected.get("status"),
+                    "manual_review_required": bool(
+                        selected.get("manual_review_required", False)
+                        or prompt.get("manual_review_required", False)
+                    ),
+                    "manual_review_reasons": prompt.get("manual_review_reasons", []),
                 },
             }
         )
@@ -133,6 +168,10 @@ def retrieve_pipeline_experiment(
             "retrieval_score": score,
             "source_ids": selected.get("source_ids", []),
             "source_status": selected.get("status"),
+            "manual_review_required": bool(
+                selected.get("manual_review_required", False)
+                or any(clip["metadata"]["manual_review_required"] for clip in clips)
+            ),
         },
         "clips": clips,
     }

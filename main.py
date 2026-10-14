@@ -112,6 +112,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Duration assigned to each retrieved step; 1 second maps to the currently validated 17-frame Wan preview.",
     )
     parser.add_argument(
+        "--require-reviewed-source",
+        action="store_true",
+        help="Stop before generation when RAG/manual metadata marks the procedure or observations as needing review.",
+    )
+    parser.add_argument(
         "--continuity-mode",
         choices=["independent", "chain"],
         default="independent",
@@ -184,6 +189,23 @@ def main(argv: list[str] | None = None) -> int:
 
     experiment = load_experiment_from_json(str(knowledge_path))
     experiment_name = args.experiment_name or _slugify(experiment.name)
+
+    review_required = bool(experiment.metadata.get("manual_review_required"))
+    review_reasons = list(experiment.metadata.get("manual_review_reasons", []))
+    for clip in experiment.clips:
+        if clip.metadata.get("manual_review_required"):
+            review_required = True
+            review_reasons.extend(clip.metadata.get("manual_review_reasons", []))
+    if review_required:
+        print(
+            "SOURCE REVIEW REQUIRED: this plan contains draft or generic procedure details. "
+            "Check the original lab manual before treating the video as instructional."
+        )
+        for reason in dict.fromkeys(review_reasons):
+            print(f"- {reason}")
+        if args.require_reviewed_source:
+            print("Generation stopped by --require-reviewed-source.", file=sys.stderr)
+            return 3
 
     config = PipelineConfig(
         base_output_dir=args.output_dir,
