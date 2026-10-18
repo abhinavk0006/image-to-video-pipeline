@@ -1,0 +1,37 @@
+{
+  "name": "Ammonia Litmus Observation",
+  "subject": "Gas identification visual regression",
+  "educational_goal": "Show the indicator paper changing colour while the existing vessel and liquid stay unchanged.",
+  "metadata": {
+    "manual_review_required": true,
+    "manual_review_reasons": ["This is an isolated visual test, not a complete salt-analysis procedure. Confirm the preceding preparation against the chosen laboratory manual."],
+    "source_url": "https://edu.rsc.org/experiments/ammonia-fountain-demonstration/979.article",
+    "scope": "The source supports gas testing with damp indicator paper. This fixture does not reproduce the source's ammonia preparation apparatus."
+  },
+  "clips": [
+    {
+      "name": "observe_litmus_paper",
+      "input_frame_path": "inputs/ammonia_litmus_ready.png",
+      "reference_mode": "independent",
+      "reference_policy": "state_keyframe",
+      "needs_reference_image": true,
+      "continuity_required": false,
+      "duration_seconds": 3.0,
+      "state_before": "Exactly one existing test tube with colourless prepared reaction mixture; damp red litmus paper is already visible in forceps just above the opening and outside the liquid.",
+      "action": "Hold the existing damp red litmus paper steady in the ammonia gas above the same tube opening.",
+      "state_after": "The exposed litmus paper turns blue. The liquid remains colourless; the test tube stays in place.",
+      "target_object": "the existing damp red litmus paper held by forceps",
+      "preserve_objects": ["the single existing test tube", "the colourless liquid", "the forceps and holder", "the laboratory background"],
+      "observable_target": "Blue colour develops on the paper only, not in the liquid or on the glass.",
+      "quantity_constraint": "One test tube and one paper strip throughout. No reagent is added in this shot.",
+      "action_pacing": "Hold the paper steady; allow the paper colour to change gradually, then hold the result still. No pouring, swirling or time lapse.",
+      "procedure_text": "With the gas-producing preparation already completed according to the manual, hold damp red litmus paper above the tube opening without contacting the liquid.",
+      "observation_text": "The damp red litmus paper turns blue; the liquid remains colourless.",
+      "image_prompt": "One fixed test tube with colourless prepared mixture, one pair of forceps holding a clearly visible damp red litmus strip just above the tube opening, outside the liquid. Fixed close view; no second tube or dropper.",
+      "prompt_bundle": {
+        "stop_condition": "The exposed paper is blue and clearly visible; all other objects retain their initial appearance.",
+        "negative_prompt": "extra test tube, blue liquid, pouring, time lapse, disappearing paper"
+      }
+    }
+  ]
+}

@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+import hashlib
+import json
+import math
+import time
 
 from config import PipelineConfig
 import sys
@@ -45,7 +49,7 @@ def resolve_handoff_offset_seconds(
 	if mode == "near_end":
 		offset = default_offset_seconds
 	elif mode == "final":
-		offset = 0.05
+		offset = 0.0
 	elif mode == "mid":
 		if clip_duration_seconds is None or clip_duration_seconds <= 0:
 			raise PipelineError("handoff_mode='mid' requires a positive clip duration")
@@ -67,11 +71,11 @@ def resolve_handoff_offset_seconds(
 
 def clip_requires_continuity(config_mode: str, clip: Clip) -> bool:
 	"""Apply explicit per-step continuity metadata over the global mode."""
-	if config_mode != "chain":
-		return False
 	if clip.continuity_required is not None:
 		return clip.continuity_required
-	return clip.reference_policy not in {"independent", "state_keyframe"}
+	if clip.reference_clip or clip.reference_mode == "chained":
+		return True
+	return config_mode == "chain" and clip.reference_policy not in {"independent", "state_keyframe"}
 
 
 @dataclass(slots=True)
@@ -100,25 +104,30 @@ class ExperimentPipeline:
 			raise PipelineError("continuity_mode must be either 'independent' or 'chain'")
 
 		try:
+			if len({c.name for c in experiment.clips if c.name}) != sum(bool(c.name) for c in experiment.clips):
+				raise PipelineError("Clip names must be unique")
 			prompt_bundles = {}
 			for index, clip in enumerate(experiment.clips):
 				clip_name = clip.name or f"clip_{index + 1}"
 				clip.name = clip_name
 				prompt_bundles[clip_name] = self.prompt_builder.build_prompt_bundle(experiment, clip)
-			if hasattr(self.video_generator, "prepare_prompts"):
-				pending_prompts = [
-					{
-						"cache_key": clip_name,
-						"prompt": bundle.motion_prompt or self.video_generator._compose_motion_prompt(bundle),
-						"negative_prompt": bundle.negative_prompt,
-					}
-					for clip_name, bundle in prompt_bundles.items()
-					if not Path(self.config.get_clip_video_file(clip_name)).exists()
-				]
-				if pending_prompts:
-					self.video_generator.prepare_prompts(pending_prompts)
-
-			generated_frames: dict[str, Path] = {}
+			# Validate references before starting the expensive GPU worker.
+			seen = set()
+			for clip in experiment.clips:
+				if not math.isfinite(clip.motion_prompt.clip_duration_seconds) or clip.motion_prompt.clip_duration_seconds <= 0:
+					raise PipelineError(f"Clip '{clip.name}' needs a finite positive duration")
+				if clip.reference_mode not in {"independent", "chained"} or clip.handoff_policy not in {"none", "mid", "final", "near_end", "offset"}:
+					raise PipelineError(f"Clip '{clip.name}' has an invalid reference or handoff policy")
+				if clip.reference_clip and clip.reference_clip not in seen:
+					raise PipelineError(f"Clip '{clip.name}' must reference an earlier clip, got '{clip.reference_clip}'")
+				if clip.input_frame_path and not Path(clip.input_frame_path).is_file():
+					raise PipelineError(f"Missing explicit reference for '{clip.name}': {clip.input_frame_path}")
+				if clip.metadata.get("requires_clip_split"):
+					raise PipelineError(f"Clip '{clip.name}' combines visible operations. Split reagent addition and indicator observation into separate clips before generation.")
+				seen.add(clip.name)
+			prompts_prepared = False
+			generated_videos: dict[str, tuple[Clip, Path]] = {}
+			handoff_frames: dict[tuple, Path] = {}
 			for index, clip in enumerate(experiment.clips):
 				clip_name = clip.name or f"clip_{index + 1}"
 				clip.name = clip_name
@@ -128,13 +137,26 @@ class ExperimentPipeline:
 					image_path and Path(image_path).is_file()
 					for image_path in (clip.input_frame_path, clip.generated_image_path)
 				)
-				if clip.reference_clip and not explicit_input_available:
-					if clip.reference_clip not in generated_frames:
+				if clip_requires_continuity(self.config.continuity_mode, clip) and not explicit_input_available:
+					reference_name = clip.reference_clip or (experiment.clips[index - 1].name if index else "")
+					if reference_name and reference_name not in generated_videos:
 						raise PipelineError(
 							f"Clip '{clip_name}' references unavailable clip "
-							f"'{clip.reference_clip}'"
+							f"'{reference_name}'"
 						)
-					reference_frame = generated_frames[clip.reference_clip]
+					if reference_name:
+						producer, source_video = generated_videos[reference_name]
+						# The consumer chooses the state it needs. Legacy producer modes
+						# remain the default when no consumer policy was supplied.
+						mode = clip.handoff_policy if clip.handoff_policy != "none" else producer.handoff_mode
+						offset = clip.handoff_offset_seconds if clip.handoff_policy != "none" else producer.handoff_offset_seconds
+						key = (reference_name, mode, offset)
+						if key not in handoff_frames:
+							frame_path = Path(self.config.get_clip_dir(clip_name)) / f"reference_{mode}.png"
+							handoff_frames[key] = self.frame_extractor.extract_handoff_frame(
+								source_video, frame_path, mode=mode, offset_seconds=offset)
+						reference_frame = handoff_frames[key]
+						producer.extracted_frame_path = str(reference_frame)
 				if clip.reference_mode == "chained" and not clip.reference_clip and not explicit_input_available:
 					raise PipelineError(
 						f"Clip '{clip_name}' declares chained reference_mode "
@@ -162,10 +184,32 @@ class ExperimentPipeline:
 				)
 
 				output_video_path = Path(self.config.get_clip_video_file(clip_name))
-				if output_video_path.exists():
+				manifest_path = output_video_path.with_suffix(".generation.json")
+				signature = self._generation_signature(prompt_bundle, clip_input_image_path)
+				try:
+					manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {}
+				except (OSError, ValueError):
+					manifest = {}
+				if not isinstance(manifest, dict):
+					manifest = {}
+				if output_video_path.is_file() and output_video_path.stat().st_size and manifest.get("signature") == signature:
 					print(f"Clip video {output_video_path} already exists. Skipping generation.")
 					generated_video_path = output_video_path
 				else:
+					if output_video_path.exists():
+						backup = output_video_path.with_name(f"{output_video_path.stem}.previous-{time.time_ns()}.mp4")
+						output_video_path.rename(backup)
+						if manifest_path.exists():
+							manifest_path.rename(backup.with_suffix(".generation.json"))
+						print(f"Changed or unverified inputs: preserving old clip as {backup}")
+					if not prompts_prepared and hasattr(self.video_generator, "prepare_prompts"):
+						self.video_generator.prepare_prompts([
+							{"cache_key": name, "prompt": bundle.motion_prompt,
+							 "negative_prompt": bundle.negative_prompt}
+							for name, bundle in prompt_bundles.items()
+						])
+						prompts_prepared = True
+					started = time.perf_counter()
 					generated_video_path = self.video_generator.generate_clip_video(
 						VideoGenerationRequest(
 							input_image_path=clip_input_image_path,
@@ -175,29 +219,16 @@ class ExperimentPipeline:
 							metadata={},
 						)
 					)
+					manifest_path.write_text(json.dumps({
+						"signature": signature, "clip": clip_name,
+						"wall_seconds": time.perf_counter() - started,
+						"requested_seconds": prompt_bundle.clip_duration_seconds,
+						"selected_area": getattr(self.video_generator, "last_generation_area", None),
+						"reference": str(clip_input_image_path),
+					}, indent=2), encoding="utf-8")
 
-				last_frame_path = None
-				if self._frame_is_needed(index, clip_name, experiment.clips):
-					handoff_offset = resolve_handoff_offset_seconds(
-						clip.handoff_mode,
-						explicit_offset_seconds=clip.handoff_offset_seconds,
-						default_offset_seconds=self.frame_extractor.frame_offset_seconds,
-						clip_duration_seconds=clip.motion_prompt.clip_duration_seconds,
-					)
-					last_frame_path = self.frame_extractor.extract_frame_before_end(
-						generated_video_path,
-						self.config.get_clip_frame_file(clip_name),
-						offset_seconds=handoff_offset,
-					)
-
-				clip.generated_image_path = str(clip_input_image_path)
 				clip.output_clip_path = str(generated_video_path)
-				clip.extracted_frame_path = str(last_frame_path) if last_frame_path is not None else None
-				# Keep the latest generated state available; each clip independently
-				# decides whether it is safe to consume it.
-				if last_frame_path is not None:
-					previous_frame_path = last_frame_path
-					generated_frames[clip_name] = last_frame_path
+				generated_videos[clip_name] = (clip, generated_video_path)
 				clip_video_paths.append(generated_video_path)
 
 			if not clip_video_paths:
@@ -208,6 +239,18 @@ class ExperimentPipeline:
 		finally:
 			if hasattr(self.video_generator, "stop_daemon"):
 				self.video_generator.stop_daemon()
+
+	def _generation_signature(self, bundle, image_path: Path) -> str:
+		"""Invalidate resumed clips when prompts, references, duration or settings change."""
+		settings = {
+			"version": 1, "prompt": asdict(bundle),
+			"reference_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
+			"generator": getattr(self.video_generator, "script_path", None),
+			"arguments": getattr(self.video_generator, "base_arguments", []),
+			"max_area": getattr(self.video_generator, "max_area", None),
+			"fallback_areas": getattr(self.video_generator, "fallback_areas", ()),
+		}
+		return hashlib.sha256(json.dumps(settings, sort_keys=True, default=str).encode()).hexdigest()
 
 	def _frame_is_needed(self, index: int, clip_name: str, clips: list[Clip]) -> bool:
 		"""Only decode a handoff image when a later clip can consume it."""

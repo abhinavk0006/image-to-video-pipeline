@@ -57,11 +57,15 @@ class LocalVideoGenerator:
 	_use_daemon: bool = field(default=True, init=False)
 	_stderr_lines: list[str] = field(default_factory=list, init=False, repr=False)
 	_stderr_thread: threading.Thread | None = field(default=None, init=False, repr=False)
+	_prepared_prompts: list[dict[str, str]] = field(default_factory=list, init=False, repr=False)
+	_area_caps: dict[tuple, int] = field(default_factory=dict, init=False, repr=False)
+	last_generation_area: int | None = field(default=None, init=False)
 
 	def prepare_prompts(self, prompts: Sequence[dict[str, str]]) -> bool:
 		"""Pre-encode Wan text contexts before video generation when daemon mode supports it."""
 		if not self._use_daemon or not self.script_path or not prompts:
 			return False
+		self._prepared_prompts = list(prompts)
 		if self._process is None:
 			command = [self.executable, self.script_path, *self.base_arguments, "--daemon"]
 			try:
@@ -122,6 +126,15 @@ class LocalVideoGenerator:
 		output_video_path.parent.mkdir(parents=True, exist_ok=True)
 
 		areas = self._generation_areas()
+		try:
+			from PIL import Image
+			with Image.open(input_image_path) as image:
+				image_size = image.size
+		except (ImportError, OSError):
+			image_size = None
+		profile = (image_size, request.prompt_bundle.clip_duration_seconds)
+		if profile in self._area_caps:
+			areas = tuple(area for area in areas if area is not None and area <= self._area_caps[profile])
 
 		# Try daemon mode if enabled
 		if self._use_daemon:
@@ -191,6 +204,8 @@ class LocalVideoGenerator:
 							raise VideoGenerationError(
 								"Video generation daemon failed to restart."
 							)
+						if self._prepared_prompts:
+							self.prepare_prompts(self._prepared_prompts)
 					task = {
 						"input_image": str(input_image_path),
 						"output_video": str(output_video_path),
@@ -245,6 +260,9 @@ class LocalVideoGenerator:
 								f"at area {area if area is not None else 'default'}.",
 								file=sys.stderr,
 							)
+							self.last_generation_area = area
+							if area is not None and attempt:
+								self._area_caps[profile] = area
 							return output_video_path
 
 						error_message = str(response.get("error", "unknown daemon error"))
@@ -252,7 +270,14 @@ class LocalVideoGenerator:
 							f"{error_message}; daemon stderr: "
 							f"{self._daemon_diagnostics()}"
 						)
-						if is_cuda_oom_error(error_message) and attempt + 1 < len(areas):
+						if response.get("fatal"):
+							try:
+								self._process.wait(timeout=5)
+							except subprocess.TimeoutExpired:
+								self._process.kill()
+								self._process.wait()
+							self._process = None
+						if (response.get("error_type") == "cuda_oom" or is_cuda_oom_error(error_message)) and attempt + 1 < len(areas):
 							print(
 								f"CUDA OOM at area {area if area is not None else 'default'}; "
 								f"retrying at area {areas[attempt + 1]}.",
@@ -329,6 +354,9 @@ class LocalVideoGenerator:
 				f"{area if area is not None else 'default'}.",
 				file=sys.stderr,
 			)
+			self.last_generation_area = area
+			if area is not None and attempt:
+				self._area_caps[profile] = area
 			return output_video_path
 
 		raise AssertionError("generation area fallback loop was empty")

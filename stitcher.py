@@ -7,6 +7,7 @@ used independently of prompt generation and clip creation.
 from __future__ import annotations
 
 import subprocess
+import tempfile
 try:
 	from imageio_ffmpeg import get_ffmpeg_exe
 except Exception:
@@ -36,6 +37,37 @@ class VideoStitcher:
 		for clip_path in normalized_clip_paths:
 			if not clip_path.exists():
 				raise StitchingError(f"Clip file does not exist: {clip_path}")
+
+		# OOM fallback may change the resolution between clips. MP4 stream copy
+		# cannot safely concatenate those differing streams. Normalize only when
+		# the input dimensions or frame rates differ; retain the cheap copy path
+		# for matching Wan/card outputs.
+		if get_ffmpeg_exe is not None:
+			import imageio_ffmpeg
+			specs = []
+			for path in normalized_clip_paths:
+				reader = imageio_ffmpeg.read_frames(str(path))
+				try:
+					meta = next(reader)
+					specs.append((tuple(meta["size"]), float(meta["fps"])))
+				finally:
+					reader.close()
+			if any(spec != specs[0] for spec in specs[1:]):
+				(width, height), fps = specs[0]
+				width, height = width // 2 * 2, height // 2 * 2
+				with tempfile.TemporaryDirectory(prefix="stitch_", dir=output_file.parent) as temporary:
+					converted = []
+					for index, path in enumerate(normalized_clip_paths):
+						destination = Path(temporary) / f"{index}.mp4"
+						command = [get_ffmpeg_exe(), "-y", "-i", str(path), "-an", "-vf",
+							f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={fps}",
+							"-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p", str(destination)]
+						try:
+							subprocess.run(command, check=True, capture_output=True, text=True, errors="replace")
+						except subprocess.CalledProcessError as error:
+							raise StitchingError(f"Could not normalize {path}: {error.stderr}") from error
+						converted.append(destination)
+					return self.stitch_clips(converted, output_file)
 
 		list_file = output_file.parent / f"{output_file.stem}_concat_list.txt"
 		list_contents = "\n".join(f"file '{clip_path.resolve().as_posix()}'" for clip_path in normalized_clip_paths)

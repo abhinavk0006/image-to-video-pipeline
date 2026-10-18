@@ -135,6 +135,9 @@ def retrieve_pipeline_experiment(
                 "continuity_required": bool(prompt.get("continuity_required", False)),
                 "reference_clip": prompt.get("reference_clip", ""),
                 "reference_mode": prompt.get("reference_mode", "independent"),
+                "reference_policy": prompt.get("reference_policy", "state_keyframe"),
+                "needs_reference_image": prompt.get("needs_reference_image", not bool(prompt.get("reference_clip"))),
+                "handoff_policy": prompt.get("handoff_policy", "none"),
                 "handoff_mode": (
                     prompt.get("handoff_policy")
                     if prompt.get("handoff_policy") in {"mid", "near_end", "final", "offset"}
@@ -147,6 +150,7 @@ def retrieve_pipeline_experiment(
                     "source_ids": prompt.get("source_ids", selected.get("source_ids", [])),
                     "retrieval_score": score,
                     "source_status": selected.get("status"),
+                    "requires_clip_split": bool(prompt.get("requires_clip_split", False)),
                     "manual_review_required": bool(
                         selected.get("manual_review_required", False)
                         or prompt.get("manual_review_required", False)

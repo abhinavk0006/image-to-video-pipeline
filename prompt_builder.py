@@ -8,6 +8,7 @@ generation steps can consume.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 
 from models import Clip, Experiment, PromptBundle, Scene
 
@@ -59,7 +60,7 @@ class PromptBuilder:
 		motion = clip.motion_prompt
 		# A complete clip prompt is the action source of truth. Appending a second
 		# paraphrase of its state/action often made Wan repeat or contradict itself.
-		if motion.motion_prompt.strip():
+		if motion.motion_prompt.strip() and not clip.action.strip():
 			action_text = motion.motion_prompt.strip()
 		else:
 			action_text = _join_sentences([
@@ -77,22 +78,32 @@ class PromptBuilder:
 		# leave ambiguous: which existing object moves, what stays put, and where
 		# the observable change must appear.
 		grounding = [
-			"Use the supplied image as the exact opening composition; act on existing objects only",
+			"Start from the supplied image. Keep the existing vessels in the same positions, with the same count, shape and contents",
 			f"Target object: {clip.target_object}" if clip.target_object else "",
 			f"Keep unchanged: {_join_phrases(clip.preserve_objects)}" if clip.preserve_objects else "",
-			f"Quantity limit: {clip.quantity_constraint}" if clip.quantity_constraint else "",
+			f"Quantity limit: {clip.quantity_constraint or 'use documented amounts only; keep the liquid below the vessel rim'}",
 			f"Observable result: {clip.observable_target}" if clip.observable_target else "",
-			f"Pacing: {clip.action_pacing}" if clip.action_pacing else "",
-			"Do not add, duplicate, replace, or move other apparatus",
-			"Show only this procedure step; apply the action to its named target and show the observation on the physical object where it occurs",
-			"Keep every named indicator or measuring device visible and show the result on the correct target: paper or strips change on the paper, while a liquid indicator changes the sample only when the procedure says it does",
-			"Follow the manual's stated order and quantities; do not invent an exact amount or ratio when none is documented, and never fill a vessel to the rim",
-			"Do not invent a reaction, color change, reagent, or apparatus when the source does not specify it",
+			f"Pacing: {clip.action_pacing or 'one slow, deliberate action, then hold the result still; no time lapse'}",
+			"Only the tool named in this step may enter the frame; use the existing vessel throughout",
+			"Perform this action once. Show the documented result only on its named physical target",
+			f"Stop when: {motion.stop_condition}" if motion.stop_condition else "",
+			f"Additional constraints: {motion.constraints}" if motion.constraints else "",
 			f"Camera: {clip.image_state.camera}" if clip.image_state.camera else "",
 			self.metadata.get("motion_style", ""),
 			self.motion_suffix,
 		]
-		return _join_sentences([action_text, *grounding])
+		text = " ".join([clip.target_object, clip.action, clip.state_after, action_text]).lower()
+		if "litmus" in text:
+			# This specifies where an explicitly requested observation belongs;
+			# it never infers a reagent, reaction, or expected colour.
+			grounding.insert(1, "Keep the litmus paper clearly visible. Any documented litmus colour change occurs on the paper only; the liquid retains its documented colour")
+			if re.search(r"\b(mouth|opening|gas|above)\b", text):
+				grounding.insert(2, "Hold the paper outside the liquid at the existing test tube opening. This shot shows the paper observation only; reagent addition belongs in a separate shot")
+		# Put spatial constraints before the action so long source text cannot
+		# push them out of the text encoder's token window. Negative prompts
+		# have no denoising effect in the CFG=1 Lightning path.
+		return _join_sentences([*grounding, action_text,
+			f"End state: {clip.state_after}" if clip.state_after else ""])
 
 	def build_prompt_bundle(self, experiment: Experiment, clip: Clip) -> PromptBundle:
 		"""Create a normalized prompt bundle for downstream modules."""

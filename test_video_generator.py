@@ -8,7 +8,7 @@ import io
 from pathlib import Path
 from unittest import mock
 
-from kaggle_wan_wrapper import configured_areas
+from kaggle_wan_wrapper import configured_areas, sampling_arguments
 from models import PromptBundle
 from video_generator import (
 	LocalVideoGenerator,
@@ -189,9 +189,48 @@ class VideoGeneratorFallbackTests(unittest.TestCase):
 		with self.assertRaisesRegex(VideoGenerationError, "unique"):
 			generator._generation_areas()
 
+	def test_successful_fallback_is_reused_for_matching_clip_profile(self):
+		generator = LocalVideoGenerator(script_path="generate.py", max_area=100, fallback_areas=(50,))
+		generator._use_daemon = False
+		areas = []
+		def run(command, **kwargs):
+			area = int(command[-1])
+			areas.append(area)
+			if area == 100:
+				raise subprocess.CalledProcessError(1, command, stderr="CUDA out of memory")
+			self.output.write_bytes(b"video")
+		with mock.patch("video_generator.subprocess.run", side_effect=run):
+			generator.generate_clip_video(self.request)
+			generator.generate_clip_video(self.request)
+		self.assertEqual(areas, [100, 50, 50])
+
+	def test_fatal_oom_restarts_and_replays_prompt_preparation(self):
+		class Process:
+			def __init__(inner, responses):
+				inner.stdin = mock.Mock()
+				inner.stdin.write.side_effect = lambda value: self.output.write_bytes(b"video")
+				inner.stdout = io.StringIO("READY\n" + "\n".join(json.dumps(r) for r in responses) + "\n")
+				inner.stderr = io.StringIO("")
+				inner.wait = mock.Mock(return_value=75)
+				inner.kill = mock.Mock()
+		processes = [Process([{"status": "success"}, {"status": "error", "fatal": True,
+			"error_type": "cuda_oom", "error": "CUDA out of memory"}]),
+			Process([{"status": "success"}, {"status": "success"}])]
+		generator = LocalVideoGenerator(script_path="generate.py", max_area=100, fallback_areas=(50,))
+		with mock.patch("video_generator.subprocess.Popen", side_effect=processes):
+			generator.prepare_prompts([{"cache_key": "clip-1", "prompt": "move"}])
+			generator.generate_clip_video(self.request)
+		for process in processes:
+			messages = [json.loads(call.args[0]) for call in process.stdin.write.call_args_list]
+			self.assertEqual(messages[0]["action"], "prepare_prompts")
+
 	def test_wrapper_area_configuration_is_ordered(self) -> None:
 		args = type("Args", (), {"max_area": 399360, "max_area_fallback": [200704]})()
 		self.assertEqual(configured_areas(args), (399360, 200704))
+
+	def test_base_comparison_does_not_merge_lightning_adapter(self):
+		args = type("Args", (), {"sampling_mode": "base", "base_steps": 20})()
+		self.assertEqual(sampling_arguments(args), ["--steps", "20"])
 
 
 if __name__ == "__main__":

@@ -55,6 +55,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-memory-gib", type=float, default=8.0)
     parser.add_argument("--gpu0-memory-gib", type=float)
     parser.add_argument("--gpu1-memory-gib", type=float)
+    parser.add_argument("--expert-source-dir", type=Path)
+    parser.add_argument("--sampling-mode", choices=["lightning", "base"], default="lightning")
+    parser.add_argument("--base-steps", type=int, default=20)
     parser.add_argument("--max-area", type=int)
     parser.add_argument(
         "--max-area-fallback",
@@ -67,7 +70,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--lightning",
         action="store_true",
-        help="Use the Wan 2.2 Lightning four-step path (the Kaggle adapter's only supported mode).",
+        help="Explicitly select the default Wan Lightning four-step path; incompatible with --sampling-mode=base.",
     )
     parser.add_argument("--daemon", action="store_true")
     # Arguments emitted by the pipeline's regular command mode.
@@ -77,7 +80,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--negative-prompt", default="")
     parser.add_argument("--clip-duration", type=float, default=1.0)
     parser.add_argument("--clip-name", default="")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.sampling_mode == "base" and args.lightning:
+        parser.error("--sampling-mode=base cannot be combined with --lightning")
+    if args.base_steps < 2:
+        parser.error("--base-steps must be at least 2")
+    return args
+
+
+def sampling_arguments(args) -> list[str]:
+    """Keep a slower CFG-enabled comparison available without changing the default."""
+    if getattr(args, "sampling_mode", "lightning") == "base":
+        return ["--steps", str(args.base_steps)]
+    return ["--steps", "4", "--lightning"]
 
 
 def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
@@ -107,7 +122,7 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         "--prompt", prompt,
         "--negative-prompt", negative,
         "--frames", str(duration_to_frames(duration)),
-        "--steps", "4", "--lightning",
+        *sampling_arguments(args),
         "--max-memory-gib", str(args.max_memory_gib),
         "--seed", str(seed),
         "--output", str(output),
@@ -118,6 +133,8 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         command.extend(["--gpu1-memory-gib", str(args.gpu1_memory_gib)])
     if args.memory_telemetry:
         command.append("--memory-telemetry")
+    if getattr(args, "expert_source_dir", None) is not None:
+        command.extend(["--expert-source-dir", str(args.expert_source_dir)])
     output.parent.mkdir(parents=True, exist_ok=True)
     print(
         f"Starting {clip_name or output.name}: {duration:g}s -> "
@@ -173,7 +190,7 @@ def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
     runner = repo / "quantization" / "kaggle_generate_video.py"
     command = [
         sys.executable, str(runner), "--daemon",
-        "--steps", "4", "--lightning",
+        *sampling_arguments(args),
         "--max-memory-gib", str(args.max_memory_gib),
     ]
     if args.gpu0_memory_gib is not None:
@@ -184,6 +201,8 @@ def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
         command.extend(["--max-area", str(args.max_area)])
     if args.memory_telemetry:
         command.append("--memory-telemetry")
+    if getattr(args, "expert_source_dir", None) is not None:
+        command.extend(["--expert-source-dir", str(args.expert_source_dir)])
     return command
 
 
