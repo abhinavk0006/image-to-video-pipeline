@@ -100,6 +100,24 @@ class ExperimentPipeline:
 			raise PipelineError("continuity_mode must be either 'independent' or 'chain'")
 
 		try:
+			prompt_bundles = {}
+			for index, clip in enumerate(experiment.clips):
+				clip_name = clip.name or f"clip_{index + 1}"
+				clip.name = clip_name
+				prompt_bundles[clip_name] = self.prompt_builder.build_prompt_bundle(experiment, clip)
+			if hasattr(self.video_generator, "prepare_prompts"):
+				pending_prompts = [
+					{
+						"cache_key": clip_name,
+						"prompt": bundle.motion_prompt or self.video_generator._compose_motion_prompt(bundle),
+						"negative_prompt": bundle.negative_prompt,
+					}
+					for clip_name, bundle in prompt_bundles.items()
+					if not Path(self.config.get_clip_video_file(clip_name)).exists()
+				]
+				if pending_prompts:
+					self.video_generator.prepare_prompts(pending_prompts)
+
 			generated_frames: dict[str, Path] = {}
 			for index, clip in enumerate(experiment.clips):
 				clip_name = clip.name or f"clip_{index + 1}"
@@ -128,7 +146,7 @@ class ExperimentPipeline:
 						f"'{clip.reference_mode}'"
 					)
 
-				prompt_bundle = self.prompt_builder.build_prompt_bundle(experiment, clip)
+				prompt_bundle = prompt_bundles[clip_name]
 				image_prompt_path = self._write_clip_prompts(clip_name, prompt_bundle.image_prompt, prompt_bundle.motion_prompt)
 
 				clip_input_image_path = self._resolve_clip_input_image(
@@ -331,3 +349,4 @@ class ExperimentPipeline:
 				f"'{generic_input_image_path}' or '{expected_image_path}'."
 			),
 		)
+
