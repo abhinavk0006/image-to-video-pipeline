@@ -2,6 +2,8 @@
 
 ## Local quality work — 18 October 2026
 
+The benchmark and acceptance criteria are in `BENCHMARK.md`. `benchmark.py` compares full sequences at fixed areas and durations, keeps OOMs as measured failures, checks decoded handoffs, and leaves scientific approval to explicit review. The notebook defaults to 2-second generation following the reported longer-shot OOM; longer profiles are opt-in experiments. Stage metrics identify whether loading, denoising or decoding is limiting.
+
 See `SCIENCE_QUALITY_NOTES.md` and `Wan22_Kaggle_Science_Quality_Persistent_Worker.ipynb` for the frame-extraction fixes, consumer-selected handoffs, atomic science prompts, pacing controls and worker optimizations. The revised notebook embeds the local source update on pinned feature-branch bases. CPU checks cover these changes; a complete two-T4 quality and timing run remains outstanding. The older pinned revisions below describe the earlier reproduction, not GPU validation of this update.
 
 ## Purpose

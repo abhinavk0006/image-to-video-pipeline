@@ -16,7 +16,7 @@
       "reference_policy": "state_keyframe",
       "needs_reference_image": true,
       "continuity_required": false,
-      "duration_seconds": 3.0,
+      "duration_seconds": 2.0,
       "state_before": "Exactly one existing test tube with colourless prepared reaction mixture; damp red litmus paper is already visible in forceps just above the opening and outside the liquid.",
       "action": "Hold the existing damp red litmus paper steady in the ammonia gas above the same tube opening.",
       "state_after": "The exposed litmus paper turns blue. The liquid remains colourless; the test tube stays in place.",

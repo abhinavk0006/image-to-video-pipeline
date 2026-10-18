@@ -1,5 +1,8 @@
 """
 Evaluation framework for the physics video pipeline.
+Legacy appearance heuristics only: histogram similarity cannot certify
+scientific correctness. Use benchmark.py for explicit scientific review and
+decoded-frame, timing and memory reports.
 Measures:
 1. Visual continuity — how well clip N+1 continues from clip N's last frame
 2. Temporal correctness — do events happen in the right order

@@ -67,6 +67,7 @@ def parse_args() -> argparse.Namespace:
         help="Lower pixel area to try after CUDA OOM. Repeat in descending order.",
     )
     parser.add_argument("--memory-telemetry", action="store_true")
+    parser.add_argument("--profile-stages", action="store_true")
     parser.add_argument(
         "--lightning",
         action="store_true",
@@ -135,6 +136,8 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         command.append("--memory-telemetry")
     if getattr(args, "expert_source_dir", None) is not None:
         command.extend(["--expert-source-dir", str(args.expert_source_dir)])
+    if getattr(args, "profile_stages", False):
+        command.append("--profile-stages")
     output.parent.mkdir(parents=True, exist_ok=True)
     print(
         f"Starting {clip_name or output.name}: {duration:g}s -> "
@@ -203,6 +206,8 @@ def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
         command.append("--memory-telemetry")
     if getattr(args, "expert_source_dir", None) is not None:
         command.extend(["--expert-source-dir", str(args.expert_source_dir)])
+    if getattr(args, "profile_stages", False):
+        command.append("--profile-stages")
     return command
 
 

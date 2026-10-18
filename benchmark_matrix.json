@@ -1,0 +1,8 @@
+{
+  "description": "Fixed-area, four-step Lightning sequence comparisons. Longer cases are experiments, not known-fitting presets. No automatic area fallback.",
+  "cases": [
+    {"name": "baseline_2s", "seconds": 2.0, "max_area": 345600},
+    {"name": "longer_3s_lower_area", "seconds": 3.0, "max_area": 230400},
+    {"name": "longer_4s_lower_area", "seconds": 4.0, "max_area": 172800}
+  ]
+}
