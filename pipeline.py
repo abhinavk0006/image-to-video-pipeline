@@ -13,6 +13,7 @@ from config import PipelineConfig
 import sys
 from frame_extractor import FrameExtractor
 from models import Clip, Experiment
+from material_state import prepare_state_tracks
 from prompt_builder import PromptBuilder
 from stitcher import VideoStitcher
 from video_generator import LocalVideoGenerator, VideoGenerationRequest
@@ -71,10 +72,12 @@ def resolve_handoff_offset_seconds(
 
 def clip_requires_continuity(config_mode: str, clip: Clip) -> bool:
 	"""Apply explicit per-step continuity metadata over the global mode."""
-	if clip.continuity_required is not None:
-		return clip.continuity_required
+	if clip.starts_new_sample:
+		return False
 	if clip.reference_clip or clip.reference_mode == "chained":
 		return True
+	if clip.continuity_required is not None:
+		return clip.continuity_required
 	return config_mode == "chain" and clip.reference_policy not in {"independent", "state_keyframe"}
 
 
@@ -99,13 +102,18 @@ class ExperimentPipeline:
 		self._prepare_directories()
 
 		clip_video_paths: list[Path] = []
-		previous_frame_path = Path(initial_image_path) if initial_image_path else None
 		if self.config.continuity_mode not in {"independent", "chain"}:
 			raise PipelineError("continuity_mode must be either 'independent' or 'chain'")
 
 		try:
 			if len({c.name for c in experiment.clips if c.name}) != sum(bool(c.name) for c in experiment.clips):
 				raise PipelineError("Clip names must be unique")
+			try:
+				prepare_state_tracks(experiment)
+			except ValueError as exc:
+				raise PipelineError(str(exc)) from exc
+			if len({c.name for c in experiment.clips}) != len(experiment.clips):
+				raise PipelineError("Clip names must be unique after assigning default names")
 			prompt_bundles = {}
 			for index, clip in enumerate(experiment.clips):
 				clip_name = clip.name or f"clip_{index + 1}"
@@ -120,7 +128,7 @@ class ExperimentPipeline:
 					raise PipelineError(f"Clip '{clip.name}' has an invalid reference or handoff policy")
 				if clip.reference_clip and clip.reference_clip not in seen:
 					raise PipelineError(f"Clip '{clip.name}' must reference an earlier clip, got '{clip.reference_clip}'")
-				if clip.input_frame_path and not Path(clip.input_frame_path).is_file():
+				if clip.input_frame_path and not clip_requires_continuity(self.config.continuity_mode, clip) and not Path(clip.input_frame_path).is_file():
 					raise PipelineError(f"Missing explicit reference for '{clip.name}': {clip.input_frame_path}")
 				if clip.metadata.get("requires_clip_split"):
 					raise PipelineError(f"Clip '{clip.name}' combines visible operations. Split reagent addition and indicator observation into separate clips before generation.")
@@ -132,12 +140,10 @@ class ExperimentPipeline:
 				clip_name = clip.name or f"clip_{index + 1}"
 				clip.name = clip_name
 				self._prepare_clip_directory(clip_name)
-				reference_frame = previous_frame_path
-				explicit_input_available = any(
-					image_path and Path(image_path).is_file()
-					for image_path in (clip.input_frame_path, clip.generated_image_path)
-				)
-				if clip_requires_continuity(self.config.continuity_mode, clip) and not explicit_input_available:
+				reference_frame = None
+				reference_name = ""
+				mode = None
+				if clip_requires_continuity(self.config.continuity_mode, clip):
 					reference_name = clip.reference_clip or (experiment.clips[index - 1].name if index else "")
 					if reference_name and reference_name not in generated_videos:
 						raise PipelineError(
@@ -157,7 +163,9 @@ class ExperimentPipeline:
 								source_video, frame_path, mode=mode, offset_seconds=offset)
 						reference_frame = handoff_frames[key]
 						producer.extracted_frame_path = str(reference_frame)
-				if clip.reference_mode == "chained" and not clip.reference_clip and not explicit_input_available:
+						if not reference_frame.is_file():
+							raise PipelineError(f"Missing generated-state handoff for '{clip_name}'; refusing a static-image fallback")
+				if clip.reference_mode == "chained" and not reference_name:
 					raise PipelineError(
 						f"Clip '{clip_name}' declares chained reference_mode "
 						"but has no reference_clip"
@@ -182,6 +190,18 @@ class ExperimentPipeline:
 					fallback_image_path=Path(initial_image_path) if initial_image_path else None,
 					image_prompt_path=image_prompt_path,
 				)
+				# Retain provenance even when a matching generated clip is resumed.
+				provenance = {
+					"reference": str(clip_input_image_path),
+					"reference_sha256": hashlib.sha256(clip_input_image_path.read_bytes()).hexdigest(),
+					"reference_clip": reference_name or None,
+					"handoff_mode": mode,
+					"state_track": clip.state_track or None,
+					"starts_new_sample": clip.starts_new_sample,
+					"expected_liquid_state": clip.liquid_state,
+					"scientific_state_verified": False,
+				}
+				Path(self.config.get_clip_dir(clip_name), "reference_provenance.json").write_text(json.dumps(provenance, indent=2), encoding="utf-8")
 
 				output_video_path = Path(self.config.get_clip_video_file(clip_name))
 				manifest_path = output_video_path.with_suffix(".generation.json")
@@ -225,6 +245,7 @@ class ExperimentPipeline:
 						"requested_seconds": prompt_bundle.clip_duration_seconds,
 						"selected_area": getattr(self.video_generator, "last_generation_area", None),
 						"reference": str(clip_input_image_path),
+						"reference_provenance": provenance,
 					}, indent=2), encoding="utf-8")
 
 				clip.output_clip_path = str(generated_video_path)
@@ -301,6 +322,9 @@ class ExperimentPipeline:
 		image_prompt_path: Path,
 		fallback_image_path: Path | None = None,
 	) -> Path:
+		# A continuing sample uses its generated state, never a stale static keyframe.
+		if previous_frame_path and previous_frame_path.is_file():
+			return previous_frame_path
 		if clip.generated_image_path:
 			provided_image_path = Path(clip.generated_image_path)
 			if provided_image_path.exists():
@@ -340,15 +364,11 @@ class ExperimentPipeline:
 					return resolved
 			return None
 
-		# Explicit per-clip references always win, regardless of continuity mode.
+		# Static references apply to independent scenes and intentional new samples.
 		if clip.input_frame_path:
 			resolved = _resolve_with_extensions(Path(clip.input_frame_path))
 			if resolved:
 				return resolved
-
-		# The caller only supplies a previous frame for explicitly continuous clips.
-		if previous_frame_path and previous_frame_path.exists():
-			return previous_frame_path
 
 		# In independent mode, reuse the verified initial reference when no
 		# clip-specific keyframe is supplied.

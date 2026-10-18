@@ -64,6 +64,10 @@ class Clip:
     quantity_constraint: str = ""
     observable_target: str = ""
     action_pacing: str = ""
+    state_track: str = ""
+    starts_new_sample: bool = False
+    liquid_state: dict[str, Any] = field(default_factory=dict)
+    tool_contact_policy: str = "auto"
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

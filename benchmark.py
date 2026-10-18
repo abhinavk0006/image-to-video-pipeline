@@ -25,6 +25,8 @@ from frame_extractor import FrameExtractor
 SCIENCE_CHECKS = (
     "source_verified", "apparatus_identity_preserved", "procedure_order_correct",
     "observation_on_correct_target", "observation_scientifically_correct", "pacing_readable",
+    "liquid_appearance_matches_source", "liquid_quantity_and_continuity_correct",
+    "tool_contact_matches_procedure",
 )
 
 
@@ -34,6 +36,14 @@ def read_json(path, default=None):
 
 def write_json(path, value):
     Path(path).write_text(json.dumps(value, indent=2), encoding="utf-8")
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def probe_video(path):
@@ -66,23 +76,42 @@ def collect_run(knowledge_file, experiment_dir, report_dir, *, wall_seconds=None
     knowledge_file, experiment_dir, report_dir = map(Path, (knowledge_file, experiment_dir, report_dir))
     report_dir.mkdir(parents=True, exist_ok=True)
     knowledge = read_json(knowledge_file)
+    from knowledge_loader import load_experiment_from_json
+    from material_state import prepare_state_tracks
+    resolved_experiment = load_experiment_from_json(str(knowledge_file))
+    prepare_state_tracks(resolved_experiment)
+    resolved_clips = {clip.name: clip for clip in resolved_experiment.clips}
     review_path = report_dir / "scientific_review.json"
     review = read_json(review_path, {"reviewer": "", "source_reference": "", "clips": {}})
+    knowledge_hash = file_sha256(knowledge_file)
     records, seen = [], set()
     for index, clip in enumerate(knowledge.get("clips", [])):
         name = clip.get("name") or f"clip_{index + 1}"
         if name in seen or Path(name).name != name:
             raise ValueError("Benchmark clip names must be unique plain file names")
-        dependency = clip.get("reference_clip")
+        resolved = resolved_clips[name]
+        dependency = resolved.reference_clip
         dependency_valid = not dependency or dependency in seen
         seen.add(name)
         video = experiment_dir / f"{name}.mp4"
         required = [*SCIENCE_CHECKS, *(["handoff_state_matches"] if dependency or clip.get("continuity_required") else [])]
         entry = review["clips"].setdefault(name, {"checks": {}, "notes": ""})
+        evidence = {"knowledge_sha256": knowledge_hash,
+                    "video_sha256": file_sha256(video) if video.is_file() else None}
+        if entry.get("evidence") != evidence and any(value is not None for value in entry["checks"].values()):
+            entry.setdefault("previous_reviews", []).append({
+                "checks": entry["checks"], "notes": entry.get("notes", ""),
+                "evidence": entry.get("evidence"),
+                "invalidated_reason": "Generated video/source changed or the old review had no evidence hashes",
+            })
+            entry["checks"], entry["notes"] = {}, ""
+        entry["evidence"] = evidence
         for key in required:
             entry["checks"].setdefault(key, None)
         science = review_status({key: entry["checks"][key] for key in required})
         row = {"clip": name, "reference_clip": dependency, "dependency_order_valid": dependency_valid,
+            "reference_provenance": read_json(experiment_dir / name / "reference_provenance.json", {}),
+            "expected_liquid_state": resolved.liquid_state,
             "technical_status": "failed", "scientific_status": science,
             "generation": read_json(video.with_suffix(".generation.json"), {}),
             "worker": read_json(video.with_suffix(".metrics.json"), {})}

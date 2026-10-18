@@ -51,6 +51,12 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
     if duration is not None:
         prompt_data = {**prompt_data, "clip_duration_seconds": duration}
     continuity = clip_data.get("continuity_required")
+    if continuity is not None and not isinstance(continuity, bool):
+        raise ValueError("continuity_required must be a JSON boolean")
+    if not isinstance(clip_data.get("starts_new_sample", False), bool):
+        raise ValueError("starts_new_sample must be a JSON boolean")
+    if "liquid_state" in clip_data and not isinstance(clip_data["liquid_state"], Mapping):
+        raise ValueError("liquid_state must be a JSON object")
     preserve_objects = clip_data.get("preserve_objects", [])
     if isinstance(preserve_objects, str):
         preserve_objects = [preserve_objects]
@@ -92,6 +98,10 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         quantity_constraint=str(clip_data.get("quantity_constraint", "")),
         observable_target=str(clip_data.get("observable_target", "")),
         action_pacing=str(clip_data.get("action_pacing", "")),
+        state_track=str(clip_data.get("state_track", "")).strip(),
+        starts_new_sample=clip_data.get("starts_new_sample", False),
+        liquid_state=_as_dict(clip_data.get("liquid_state", {})),
+        tool_contact_policy=str(clip_data.get("tool_contact_policy", "auto")),
         metadata=_as_dict(clip_data.get("metadata", {})),
     )
 

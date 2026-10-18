@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import re
 
 from models import Clip, Experiment, PromptBundle, Scene
+from material_state import liquid_constraints, tool_constraint
 
 
 def _clean_parts(parts: list[str]) -> list[str]:
@@ -78,7 +79,7 @@ class PromptBuilder:
 		# leave ambiguous: which existing object moves, what stays put, and where
 		# the observable change must appear.
 		grounding = [
-			"Start from the supplied image. Keep the existing vessels in the same positions, with the same count, shape and contents",
+			"Start from the supplied image. Preserve vessel identity, count, shape and position; contents change only through the stated operation",
 			f"Target object: {clip.target_object}" if clip.target_object else "",
 			f"Keep unchanged: {_join_phrases(clip.preserve_objects)}" if clip.preserve_objects else "",
 			f"Quantity limit: {clip.quantity_constraint or 'use documented amounts only; keep the liquid below the vessel rim'}",
@@ -99,11 +100,19 @@ class PromptBuilder:
 			grounding.insert(1, "Keep the litmus paper clearly visible. Any documented litmus colour change occurs on the paper only; the liquid retains its documented colour")
 			if re.search(r"\b(mouth|opening|gas|above)\b", text):
 				grounding.insert(2, "Hold the paper outside the liquid at the existing test tube opening. This shot shows the paper observation only; reagent addition belongs in a separate shot")
-		# Put spatial constraints before the action so long source text cannot
-		# push them out of the text encoder's token window. Negative prompts
-		# have no denoising effect in the CFG=1 Lightning path.
-		return _join_sentences([*grounding, action_text,
-			f"End state: {clip.state_after}" if clip.state_after else ""])
+		# Put the action, expected appearance and contact rule ahead of general
+		# styling. CFG=1 Lightning ignores the negative prompt during denoising.
+		critical = [
+			f"Action: {clip.action}" if clip.action else action_text,
+			f"Required result: {clip.state_after}" if clip.state_after else "",
+			tool_constraint(clip),
+			*liquid_constraints(clip),
+		]
+		return _join_sentences([*critical, *grounding,
+			f"Starting state: {clip.state_before}" if clip.state_before else "",
+			motion.moving_object, motion.motion,
+			f"Direction: {motion.direction}" if motion.direction else "",
+			motion.constraints, motion.stop_condition])
 
 	def build_prompt_bundle(self, experiment: Experiment, clip: Clip) -> PromptBundle:
 		"""Create a normalized prompt bundle for downstream modules."""
@@ -125,6 +134,10 @@ class PromptBuilder:
 				**clip.motion_prompt.metadata,
 				**clip.metadata,
 				**self.metadata,
+				"state_track": clip.state_track,
+				"starts_new_sample": clip.starts_new_sample,
+				"liquid_state": clip.liquid_state,
+				"tool_contact_policy": clip.tool_contact_policy,
 			},
 		)
 

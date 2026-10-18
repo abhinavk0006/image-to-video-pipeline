@@ -1,5 +1,15 @@
 # WAN22 Educational Chemistry Video Pipeline
 
+## 19 October 2026: material continuity and card presentation
+
+Current entry point: `Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb` on
+`feature/persistent-wan-worker`. Read `CONTINUITY_AND_CARDS.md` for the new source
+contracts and pending GPU review. The previous chloride notebook's first three
+shots used static independent references; this explains a route for level resets.
+The new plan uses one sample track and generated final-frame references throughout.
+Prompt changes and CPU card rendering are implemented; visual scientific accuracy
+has not been established by a new GPU run.
+
 ## Local quality work — 18 October 2026
 
 The benchmark and acceptance criteria are in `BENCHMARK.md`. `benchmark.py` compares full sequences at fixed areas and durations, keeps OOMs as measured failures, checks decoded handoffs, and leaves scientific approval to explicit review. The notebook defaults to 2-second generation following the reported longer-shot OOM; longer profiles are opt-in experiments. Stage metrics identify whether loading, denoising or decoding is limiting.

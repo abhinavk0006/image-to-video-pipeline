@@ -1,5 +1,12 @@
 # Scientific Image-to-Video Generation Pipeline
 
+## Current persistent-worker notebook — 19 October 2026
+
+Use [Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb](Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb)
+for the current iteration. It chains generated sample states and uses dark
+blue/purple 16:9 cards. See [CONTINUITY_AND_CARDS.md](CONTINUITY_AND_CARDS.md)
+for contracts, limitations and the next-run review checklist.
+
 An orchestrator pipeline that generates multi-clip videos from static initial images and structured scientific experiment JSON logs. It ensures visual continuity across transitions by feeding the final frame of the preceding clip as the initial frame of the next.
 
 Designed to run in resource-constrained cloud environments (e.g., 62GB RAM / 46GB L40S GPU) using memory-efficient execution strategies.
