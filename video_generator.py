@@ -215,6 +215,8 @@ class LocalVideoGenerator:
 						"clip_name": request.clip_name,
 						"prompt_cache_key": request.clip_name,
 					}
+					if 'seed' in request.metadata:
+						task['seed'] = int(request.metadata['seed'])
 					if area is not None:
 						task["max_area"] = area
 

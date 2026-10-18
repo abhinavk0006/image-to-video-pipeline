@@ -87,6 +87,7 @@ class ExperimentPipeline:
 	video_generator: LocalVideoGenerator = field(default_factory=LocalVideoGenerator)
 	frame_extractor: FrameExtractor = field(default_factory=FrameExtractor)
 	stitcher: VideoStitcher = field(default_factory=VideoStitcher)
+	_repairs_used: int = field(default=0, init=False)
 
 	def run(
 		self,
@@ -97,6 +98,9 @@ class ExperimentPipeline:
 		"""Run the full clip loop and return the final stitched video path."""
 
 		self._prepare_directories()
+		self._repairs_used = 0
+		if self.config.science_mode not in {'off', 'observe', 'strict'} or self.config.science_repair_budget < 0:
+			raise PipelineError('Invalid science mode or repair budget')
 
 		clip_video_paths: list[Path] = []
 		previous_frame_path = Path(initial_image_path) if initial_image_path else None
@@ -114,9 +118,12 @@ class ExperimentPipeline:
 			# Validate references before starting the expensive GPU worker.
 			seen = set()
 			for clip in experiment.clips:
+				if self.config.science_mode != 'off':
+					from science_evidence import contract_for
+					contract_for(clip)
 				if not math.isfinite(clip.motion_prompt.clip_duration_seconds) or clip.motion_prompt.clip_duration_seconds <= 0:
 					raise PipelineError(f"Clip '{clip.name}' needs a finite positive duration")
-				if clip.reference_mode not in {"independent", "chained"} or clip.handoff_policy not in {"none", "mid", "final", "near_end", "offset"}:
+				if clip.reference_mode not in {"independent", "chained"} or clip.handoff_policy not in {"none", "mid", "final", "near_end", "offset", "reviewed"}:
 					raise PipelineError(f"Clip '{clip.name}' has an invalid reference or handoff policy")
 				if clip.reference_clip and clip.reference_clip not in seen:
 					raise PipelineError(f"Clip '{clip.name}' must reference an earlier clip, got '{clip.reference_clip}'")
@@ -132,6 +139,10 @@ class ExperimentPipeline:
 				clip_name = clip.name or f"clip_{index + 1}"
 				clip.name = clip_name
 				self._prepare_clip_directory(clip_name)
+				if clip.metadata.get('render_mode') == 'circuit_diagram':
+					from circuit_renderer import render_reference
+					clip.input_frame_path = str(render_reference(clip.metadata['circuit'],
+						Path(self.config.get_clip_dir(clip_name)) / 'circuit_reference'))
 				reference_frame = previous_frame_path
 				explicit_input_available = any(
 					image_path and Path(image_path).is_file()
@@ -150,11 +161,20 @@ class ExperimentPipeline:
 						# remain the default when no consumer policy was supplied.
 						mode = clip.handoff_policy if clip.handoff_policy != "none" else producer.handoff_mode
 						offset = clip.handoff_offset_seconds if clip.handoff_policy != "none" else producer.handoff_offset_seconds
-						key = (reference_name, mode, offset)
+						key = (reference_name, mode, offset, tuple(clip.metadata.get('handoff_requirements', [])))
 						if key not in handoff_frames:
 							frame_path = Path(self.config.get_clip_dir(clip_name)) / f"reference_{mode}.png"
-							handoff_frames[key] = self.frame_extractor.extract_handoff_frame(
-								source_video, frame_path, mode=mode, offset_seconds=offset)
+							if mode == 'reviewed':
+								from science_evidence import select_reviewed_handoff
+								try:
+									handoff_frames[key] = select_reviewed_handoff(source_video,
+										Path(self.config.get_clip_dir(reference_name)) / 'science/review.json',
+										clip.metadata.get('handoff_requirements', []), frame_path)
+								except (OSError, ValueError) as error:
+									raise PipelineError(f'Reviewed handoff unavailable for {clip_name}: {error}') from error
+							else:
+								handoff_frames[key] = self.frame_extractor.extract_handoff_frame(
+									source_video, frame_path, mode=mode, offset_seconds=offset)
 						reference_frame = handoff_frames[key]
 						producer.extracted_frame_path = str(reference_frame)
 				if clip.reference_mode == "chained" and not clip.reference_clip and not explicit_input_available:
@@ -184,6 +204,20 @@ class ExperimentPipeline:
 				)
 
 				output_video_path = Path(self.config.get_clip_video_file(clip_name))
+				if self.config.science_mode != 'off':
+					from science_evidence import visibility_preflight, write_json
+					from PIL import Image
+					with Image.open(clip_input_image_path) as input_image:
+						width, height = input_image.size
+					area = getattr(self.video_generator, 'max_area', None)
+					projected = None
+					if area and clip.metadata.get('render_mode') != 'circuit_diagram':
+						aspect = height / width
+						projected = (max(16, int(math.sqrt(area/aspect)//16)*16), max(16, int(math.sqrt(area*aspect)//16)*16))
+					visibility = visibility_preflight(clip_input_image_path, clip.metadata.get('visibility_targets', []), output_size=projected)
+					write_json(Path(self.config.get_clip_dir(clip_name)) / 'science/visibility.json', visibility)
+					if self.config.science_mode == 'strict' and visibility['status'] != 'pass':
+						raise PipelineError(f'Visibility preflight {visibility["status"]} for {clip_name}; annotate target regions and inspect science/visibility.json')
 				manifest_path = output_video_path.with_suffix(".generation.json")
 				signature = self._generation_signature(prompt_bundle, clip_input_image_path)
 				try:
@@ -202,23 +236,29 @@ class ExperimentPipeline:
 						if manifest_path.exists():
 							manifest_path.rename(backup.with_suffix(".generation.json"))
 						print(f"Changed or unverified inputs: preserving old clip as {backup}")
-					if not prompts_prepared and hasattr(self.video_generator, "prepare_prompts"):
+					if clip.metadata.get('render_mode') != 'circuit_diagram' and not prompts_prepared and hasattr(self.video_generator, "prepare_prompts"):
 						self.video_generator.prepare_prompts([
 							{"cache_key": name, "prompt": bundle.motion_prompt,
 							 "negative_prompt": bundle.negative_prompt}
-							for name, bundle in prompt_bundles.items()
+							for name, bundle in prompt_bundles.items() if next(c for c in experiment.clips if c.name == name).metadata.get('render_mode') != 'circuit_diagram'
 						])
 						prompts_prepared = True
 					started = time.perf_counter()
-					generated_video_path = self.video_generator.generate_clip_video(
-						VideoGenerationRequest(
-							input_image_path=clip_input_image_path,
-							output_video_path=output_video_path,
-							prompt_bundle=prompt_bundle,
-							clip_name=clip_name,
-							metadata={},
+					if clip.metadata.get('render_mode') == 'circuit_diagram':
+						from circuit_renderer import render_animation
+						generated_video_path = render_animation(clip.metadata['circuit'],
+							clip.metadata.get('diagram_timeline', []), output_video_path,
+							seconds=prompt_bundle.clip_duration_seconds)
+					else:
+						generated_video_path = self.video_generator.generate_clip_video(
+							VideoGenerationRequest(
+								input_image_path=clip_input_image_path,
+								output_video_path=output_video_path,
+								prompt_bundle=prompt_bundle,
+								clip_name=clip_name,
+								metadata={},
+							)
 						)
-					)
 					manifest_path.write_text(json.dumps({
 						"signature": signature, "clip": clip_name,
 						"wall_seconds": time.perf_counter() - started,
@@ -228,6 +268,8 @@ class ExperimentPipeline:
 					}, indent=2), encoding="utf-8")
 
 				clip.output_clip_path = str(generated_video_path)
+				if self.config.science_mode != 'off':
+					generated_video_path = self._review_and_repair(clip, generated_video_path, prompt_bundle, clip_input_image_path)
 				generated_videos[clip_name] = (clip, generated_video_path)
 				clip_video_paths.append(generated_video_path)
 
@@ -243,14 +285,48 @@ class ExperimentPipeline:
 	def _generation_signature(self, bundle, image_path: Path) -> str:
 		"""Invalidate resumed clips when prompts, references, duration or settings change."""
 		settings = {
-			"version": 1, "prompt": asdict(bundle),
+			"version": 2, "prompt": {key: value for key, value in asdict(bundle).items() if key != 'metadata'},
 			"reference_sha256": hashlib.sha256(image_path.read_bytes()).hexdigest(),
 			"generator": getattr(self.video_generator, "script_path", None),
 			"arguments": getattr(self.video_generator, "base_arguments", []),
 			"max_area": getattr(self.video_generator, "max_area", None),
 			"fallback_areas": getattr(self.video_generator, "fallback_areas", ()),
+			"rendering": bundle.metadata.get('render_mode', 'wan'),
+			"circuit": bundle.metadata.get('circuit'),
+			"diagram_timeline": bundle.metadata.get('diagram_timeline'),
 		}
 		return hashlib.sha256(json.dumps(settings, sort_keys=True, default=str).encode()).hexdigest()
+
+	def _review_and_repair(self, clip, video, bundle, image):
+		from science_evidence import review_clip, write_json, sha256, contract_for
+		directory = Path(self.config.get_clip_dir(clip.name)) / 'science'
+		while True:
+			result, review = review_clip(clip, video, directory, self.config.science_verifier_script)
+			print(f'Scientific review {clip.name}: {result}; evidence: {directory}')
+			if result != 'rejected' or not self.config.science_verifier_script or self._repairs_used >= self.config.science_repair_budget or clip.metadata.get('render_mode') == 'circuit_diagram':
+				break
+			self._repairs_used += 1
+			seed = int.from_bytes(hashlib.sha256(f'{clip.name}:repair:{sha256(video)}:{self._repairs_used}'.encode()).digest()[:4], 'big')
+			backup = video.with_name(f'{video.stem}.rejected-{time.time_ns()}.mp4')
+			video.rename(backup)
+			write_json(backup.with_suffix('.science-evidence.json'), {'contract': contract_for(clip),
+				'review': {**review, 'video': str(backup.resolve())}})
+			manifest = video.with_suffix('.generation.json')
+			if manifest.exists():
+				manifest.rename(backup.with_suffix('.generation.json'))
+			self.video_generator.prepare_prompts([{'cache_key': clip.name,
+				'prompt': bundle.motion_prompt, 'negative_prompt': bundle.negative_prompt}])
+			started = time.perf_counter()
+			video = self.video_generator.generate_clip_video(VideoGenerationRequest(
+				input_image_path=image, output_video_path=video, prompt_bundle=bundle,
+				clip_name=clip.name, metadata={'seed': str(seed)}))
+			write_json(manifest, {'signature': self._generation_signature(bundle, image),
+				'clip': clip.name, 'repair_seed': seed, 'wall_seconds': time.perf_counter()-started,
+				'requested_seconds': bundle.clip_duration_seconds, 'reference': str(image),
+				'selected_area': getattr(self.video_generator, 'last_generation_area', None)})
+		if self.config.science_mode == 'strict' and result != 'accepted':
+			raise PipelineError(f'Scientific review {result} for {clip.name}; complete {directory / "review.json"} and rerun')
+		return video
 
 	def _frame_is_needed(self, index: int, clip_name: str, clips: list[Clip]) -> bool:
 		"""Only decode a handoff image when a later clip can consume it."""

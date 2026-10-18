@@ -146,6 +146,8 @@ def retrieve_pipeline_experiment(
                 "handoff_offset_seconds": prompt.get("handoff_offset_seconds"),
                 "metadata": {
                     "experiment_id": experiment_id,
+                    **{key: prompt[key] for key in ('science_spec', 'visibility_targets',
+                        'handoff_requirements', 'render_mode', 'circuit', 'diagram_timeline') if key in prompt},
                     "step_id": step_id,
                     "source_ids": prompt.get("source_ids", selected.get("source_ids", [])),
                     "retrieval_score": score,

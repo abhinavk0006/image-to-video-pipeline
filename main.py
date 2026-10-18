@@ -140,6 +140,10 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Log per-GPU memory telemetry in the Kaggle Wan runner.",
     )
+    parser.add_argument('--science-mode', choices=['off', 'observe', 'strict'], default='off')
+    parser.add_argument('--science-verifier-script', help='Optional local Python verifier; see SCIENCE_RESEARCH.md for the evidence protocol.')
+    parser.add_argument('--science-repair-budget', type=int, default=0,
+        help='Maximum extra generations for explicit verifier rejections across this invocation. Pending evidence never triggers retries.')
     return parser
 
 
@@ -213,6 +217,9 @@ def main(argv: list[str] | None = None) -> int:
         input_dir=args.input_dir,
         experiment_name=experiment_name,
         continuity_mode=args.continuity_mode,
+        science_mode=args.science_mode,
+        science_verifier_script=args.science_verifier_script,
+        science_repair_budget=args.science_repair_budget,
     )
 
     video_generator = LocalVideoGenerator(

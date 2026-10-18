@@ -1,0 +1,67 @@
+{
+  "description": "Unmeasured 2-second runtime comparisons. Run selected cases explicitly; each complete sequence may be expensive. Same area, seed policy and Lightning sampler. No area fallback. Prompt caches are isolated per case.",
+  "cases": [
+    {
+      "name": "baseline_cache_disabled",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=0"
+      ]
+    },
+    {
+      "name": "cpu_expert_reuse",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=14",
+        "--host-reserve-gib=3"
+      ]
+    },
+    {
+      "name": "cpu_reuse_stream_loading",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=14",
+        "--host-reserve-gib=3",
+        "--stream-expert-to-gpu"
+      ]
+    },
+    {
+      "name": "cpu_reuse_vae_stream",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=14",
+        "--host-reserve-gib=3",
+        "--vae-stream-to-cpu",
+        "--stream-expert-to-gpu"
+      ]
+    },
+    {
+      "name": "per_channel_comparison",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=14",
+        "--host-reserve-gib=3",
+        "--vae-stream-to-cpu",
+        "--quantization=per_channel",
+        "--stream-expert-to-gpu"
+      ]
+    },
+    {
+      "name": "contiguous_comparison",
+      "seconds": 2,
+      "max_area": 345600,
+      "generator_arguments": [
+        "--cpu-expert-cache-gib=14",
+        "--host-reserve-gib=3",
+        "--vae-stream-to-cpu",
+        "--placement=contiguous",
+        "--stream-expert-to-gpu"
+      ]
+    }
+  ]
+}

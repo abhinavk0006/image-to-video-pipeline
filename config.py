@@ -17,6 +17,9 @@ class PipelineConfig:
     default_image_extension: str = "png"
     default_video_extension: str = "mp4"
     continuity_mode: str = "independent"
+    science_mode: str = "off"
+    science_verifier_script: str | None = None
+    science_repair_budget: int = 0
 
     @property
     def experiment_output_dir(self) -> str:

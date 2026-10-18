@@ -92,7 +92,9 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         quantity_constraint=str(clip_data.get("quantity_constraint", "")),
         observable_target=str(clip_data.get("observable_target", "")),
         action_pacing=str(clip_data.get("action_pacing", "")),
-        metadata=_as_dict(clip_data.get("metadata", {})),
+        metadata={**_as_dict(clip_data.get("metadata", {})), **{
+            key: clip_data[key] for key in ('science_spec', 'visibility_targets',
+                'handoff_requirements', 'render_mode', 'circuit', 'diagram_timeline') if key in clip_data}},
     )
 
 

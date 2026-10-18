@@ -235,6 +235,11 @@ def run_matrix(args):
             "--generator-working-dir", str(pipeline), "--wan-repo-dir", str(wan), "--wan-model-preset", "i2v-a14b",
             "--continuity-mode", "chain", "--wan-max-area", str(area), "--wan-memory-telemetry",
             "--generator-arg=--profile-stages", "--generator-arg=--gpu0-memory-gib=5", "--generator-arg=--gpu1-memory-gib=11"]
+        # Give each case its own initially empty prompt cache. Otherwise later
+        # cases silently benefit from the baseline's CPU text encoding.
+        command.append(f"--generator-arg=--prompt-cache-dir={directory / 'prompt_cache'}")
+        for argument in case.get('generator_arguments', ['--cpu-expert-cache-gib=0']):
+            command.append('--generator-arg='+str(argument))
         if args.initial_image:
             command += ["--initial-image", str(Path(args.initial_image).resolve())]
         if args.expert_source_dir:

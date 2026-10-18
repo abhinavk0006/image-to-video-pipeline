@@ -1,0 +1,11 @@
+{
+  "videos": [],
+  "pending_kinds": [
+    "wrong_order",
+    "omitted_action",
+    "premature_observation",
+    "duplicated_vessel",
+    "wrong_target"
+  ],
+  "ground_truth_reviewed": false
+}

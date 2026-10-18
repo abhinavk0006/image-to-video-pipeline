@@ -1,3 +1,16 @@
+## Experimental research and optimization branch — 19 October 2026
+
+The branch `codex/science-evidence-and-runtime-cache` adds scientific evidence
+records, human-backed review gates, reviewed handoffs, bounded verifier-driven
+repair, research metrics/challenge/study tooling and an initial circuit renderer.
+It also adds runtime caching, VAE output streaming and optional precision/placement
+experiments. See `SCIENCE_RESEARCH.md` and `RESEARCH_CHECKLIST.md`.
+
+Use `Wan22_Kaggle_Science_Evidence_Optimized.ipynb` in a fresh Kaggle session.
+No new target-hardware timings, scientific acceptance or completed student study
+are claimed. The older baseline notebook and persistent-worker branch remain
+available for comparison. New regression/GPU checks are pending.
+
 # WAN22 Educational Chemistry Video Pipeline
 
 ## Local quality work — 18 October 2026

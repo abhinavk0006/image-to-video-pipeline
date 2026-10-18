@@ -36,6 +36,7 @@ class PromptBuilder:
 	def build_image_prompt(self, experiment: Experiment, scene: Scene, clip: Clip) -> str:
 		parts = [
 			f"Create a {experiment.name} scene",
+			f"Required starting conditions: {'; '.join(clip.metadata.get('science_spec', {}).get('preconditions', []))}" if clip.metadata.get('science_spec', {}).get('preconditions') else '',
 			experiment.description,
 			scene.scene,
 			f"Camera: {scene.camera}" if scene.camera else "",
@@ -102,7 +103,9 @@ class PromptBuilder:
 		# Put spatial constraints before the action so long source text cannot
 		# push them out of the text encoder's token window. Negative prompts
 		# have no denoising effect in the CFG=1 Lightning path.
+		scientific_requirements = [str(item['description']) for item in clip.metadata.get('science_spec', {}).get('requirements', [])]
 		return _join_sentences([*grounding, action_text,
+			f"Scientific requirements: {'; '.join(scientific_requirements)}" if scientific_requirements else '',
 			f"End state: {clip.state_after}" if clip.state_after else ""])
 
 	def build_prompt_bundle(self, experiment: Experiment, clip: Clip) -> PromptBundle:
