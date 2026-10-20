@@ -100,6 +100,32 @@ verification/runtime work and is not merged by this update.
 
 ## Rebuild
 
+### Preview import recovery
+
+If `from frame_extractor import FrameExtractor` reports `ModuleNotFoundError`
+after successful generation, the notebook kernel cannot see the repository's
+source directory. `subprocess.run(..., cwd=pipeline)` sets the child's working
+directory, not the notebook kernel's import path. The exact reason an earlier
+path entry was lost cannot be determined from the log alone.
+
+Add this at the top of the failing preview cell and rerun only that cell:
+
+```python
+import sys, importlib
+from pathlib import Path
+pipeline = Path("/kaggle/working/image-to-video-pipeline")
+if not (pipeline / "frame_extractor.py").is_file():
+    raise FileNotFoundError(f"Restore pipeline sources at {pipeline}; keep existing videos")
+sys.path.insert(0, str(pipeline))
+importlib.invalidate_caches()
+```
+
+The revised notebook adds its own source-path bootstrap to each local-import cell,
+including shot planning, cards, preview and composition. Preview also imports
+Pillow and display explicitly. No new GPU generation is needed for this fix.
+
+### Build from source
+
 Run `python tools/build_continuity_notebook.py --wan-repo <Wan2.2 checkout>
 --rag-repo <Edu-video-gen-dataset checkout> --output-dir <artifact directory>`.
 The two dependency checkouts must match the pinned persistent/structured-plan bases;

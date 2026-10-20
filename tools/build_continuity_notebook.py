@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 import subprocess
+import re
 
 import argparse
 parser = argparse.ArgumentParser(description=__doc__)
@@ -57,6 +58,23 @@ def md(source):
 
 
 def code(source):
+    # subprocess cwd only affects the child. Each notebook cell importing local
+    # modules must establish the kernel's path itself, including on partial reruns.
+    modules = sorted(set(re.findall(
+        r"^(?:from|import) (knowledge_loader|models|material_state|science_cards|frame_extractor|stitcher)\b",
+        source, re.MULTILINE)))
+    if modules:
+        bootstrap = '''import sys, importlib
+from pathlib import Path
+pipeline = Path("/kaggle/working/image-to-video-pipeline").resolve()
+required_pipeline_files = REQUIRED_FILES
+missing_pipeline_files = [name for name in required_pipeline_files if not (pipeline / name).is_file()]
+if missing_pipeline_files:
+    raise FileNotFoundError(f"Pipeline sources missing at {pipeline}: {missing_pipeline_files}. Restore the notebook's source setup in this session; existing videos do not need regeneration.")
+sys.path[:] = [str(pipeline)] + [entry for entry in sys.path if entry != str(pipeline)]
+importlib.invalidate_caches()
+'''.replace("REQUIRED_FILES", repr([name + ".py" for name in modules]))
+        source = bootstrap + source
     cells.append({"cell_type": "code", "metadata": {}, "source": source.strip() + "\n", "outputs": [], "execution_count": None})
 
 
@@ -248,7 +266,17 @@ started = time.perf_counter()
 subprocess.run(command, cwd=pipeline, check=True)
 generation_wall_seconds = time.perf_counter() - started
 print(f"Pipeline wall time including worker startup: {generation_wall_seconds:.1f}s")''')
-code('''from IPython.display import Video
+md('''### Recover a preview import without regenerating
+Every cell importing project modules restores the notebook kernel's source path.
+If previewing an existing run reports `No module named frame_extractor`, add
+`import sys; sys.path.insert(0, "/kaggle/working/image-to-video-pipeline")`
+above its imports and rerun that preview cell. The successful generation subprocess
+does not establish the notebook kernel's import path. Existing MP4s remain usable;
+the preview, handoff extraction and composition use CPU processing.
+''')
+code('''from IPython.display import Video, display
+from PIL import Image
+import json
 from frame_extractor import FrameExtractor
 experiment_dir = OUT / experiment_slug
 video_paths = [experiment_dir / f"{item['name']}.mp4" for item in clips]
