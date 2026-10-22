@@ -99,6 +99,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Path to the Edu-video-gen-dataset checkout. Enables its local TF-IDF RAG prompt builder for --query.",
     )
     parser.add_argument("--rag-top-k", type=int, default=1)
+    parser.add_argument("--rag-protocol", action="append", default=[], metavar="EXPERIMENT_ID=VARIANT_ID",
+                        help="Pin a dataset experiment and one of its source-backed protocols; may be repeated.")
     parser.add_argument(
         "--rag-max-clips",
         type=int,
@@ -144,6 +146,10 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Log per-GPU memory telemetry in the Kaggle Wan runner.",
     )
+    parser.add_argument('--science-mode', choices=['off', 'observe', 'strict'], default='off')
+    parser.add_argument('--science-verifier-script', help='Optional local Python verifier; see SCIENCE_RESEARCH.md for the evidence protocol.')
+    parser.add_argument('--science-repair-budget', type=int, default=0,
+        help='Maximum extra generations for explicit verifier rejections across this invocation. Pending evidence never triggers retries.')
     return parser
 
 
@@ -161,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
                 top_k=args.rag_top_k,
                 clip_duration_seconds=args.rag_clip_duration_seconds,
                 max_clips=args.rag_max_clips,
+                protocol_selections=dict(item.split("=", 1) for item in args.rag_protocol),
             )
             rag_metadata = experiment_data.get("metadata", {})
             print(
@@ -219,6 +226,9 @@ def main(argv: list[str] | None = None) -> int:
         continuity_mode=args.continuity_mode,
         material_plan_mode=args.material_plan_mode,
         material_review_mode=args.material_review_mode,
+        science_mode=args.science_mode,
+        science_verifier_script=args.science_verifier_script,
+        science_repair_budget=args.science_repair_budget,
     )
 
     video_generator = LocalVideoGenerator(

@@ -19,6 +19,9 @@ class PipelineConfig:
     continuity_mode: str = "independent"
     material_plan_mode: str = "warn"
     material_review_mode: str = "observe"
+    science_mode: str = "off"
+    science_verifier_script: str | None = None
+    science_repair_budget: int = 0
 
     @property
     def experiment_output_dir(self) -> str:

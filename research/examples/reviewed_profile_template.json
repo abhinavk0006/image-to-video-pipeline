@@ -1,0 +1,13 @@
+[
+  {
+    "status": "unmeasured",
+    "measurement_id": null,
+    "seconds": 2,
+    "area": 345600,
+    "wall_seconds": null,
+    "peak_allocated_bytes": [
+      null,
+      null
+    ]
+  }
+]

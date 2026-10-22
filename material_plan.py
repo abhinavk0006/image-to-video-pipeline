@@ -49,7 +49,11 @@ def compile_material_plan(experiment: Experiment) -> dict:
         kind = dose.get("kind", "unspecified")
         if kind not in {"volume", "drops", "endpoint", "none", "unspecified"}:
             raise ValueError(f"{clip.name}: invalid dose kind {kind!r}")
-        addition = bool(re.search(r"\b(add|adding|pour|dispense|introduce|deliver)\b", clip.action.lower() or clip.motion_prompt.motion_prompt.lower()))
+        addition = bool(re.search(r"\b(add|adding|pour|dispense|introduce|deliver|acidify)\b", clip.action.lower() or clip.motion_prompt.motion_prompt.lower()))
+        # Source facts also identify additions phrased without an 'add' verb.
+        # An unknown dose must propagate uncertainty, never become zero mL.
+        addition = addition or any(f.get("role") in {"addition", "transfer"}
+                                   for f in clip.metadata.get("quantities", []))
         addition = addition or kind in {"volume", "drops", "endpoint"} or "added_ml" in state
         added = number(state, "added_ml", clip.name)
         bound = None

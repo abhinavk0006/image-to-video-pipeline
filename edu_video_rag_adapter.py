@@ -9,6 +9,7 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+from source_quantities import bind_source_quantities
 
 
 def _slug(value: str) -> str:
@@ -22,6 +23,7 @@ def retrieve_pipeline_experiment(
     top_k: int = 1,
     clip_duration_seconds: float = 1.0,
     max_clips: int | None = None,
+    protocol_selections: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run the fork's TF-IDF prompt-bundle builder and adapt its best result.
 
@@ -50,6 +52,8 @@ def retrieve_pipeline_experiment(
             "--output",
             str(output),
         ]
+        for experiment_id, variant_id in (protocol_selections or {}).items():
+            command.extend(["--protocol", f"{experiment_id}={variant_id}"])
         result = subprocess.run(
             command,
             cwd=repo,
@@ -66,6 +70,9 @@ def retrieve_pipeline_experiment(
     if not retrieved:
         raise ValueError(f"Edu-video RAG returned no experiments for query: {query}")
     selected = retrieved[0]
+    if selected.get("planning_blocked"):
+        available = [v["variant_id"] for v in selected.get("protocol_variants", [])]
+        raise ValueError(f"{selected.get('experiment_id')}: select a protocol before generation. Available variants: {available}")
     score = float(selected.get("retrieval_score", 0.0))
     if score <= 0:
         raise ValueError(
@@ -81,6 +88,8 @@ def retrieve_pipeline_experiment(
     if not prompt_inputs:
         raise ValueError(f"RAG match {experiment_id!r} contains no usable step prompts")
     if max_clips is not None:
+        if len(prompt_inputs) > max_clips and selected.get("protocol_variants"):
+            raise ValueError("max_clips would truncate a selected scientific protocol; split the run explicitly rather than omitting its later steps")
         prompt_inputs = prompt_inputs[:max_clips]
 
     scene_by_id = {
@@ -151,6 +160,7 @@ def retrieve_pipeline_experiment(
                 ),
                 "handoff_offset_seconds": prompt.get("handoff_offset_seconds"),
                 "metadata": {
+                    **{key: prompt[key] for key in ("quantities", "source_evidence", "sample_id", "reaction_scope", "science_spec", "visibility_targets", "handoff_requirements", "render_mode", "circuit", "diagram_timeline") if key in prompt},
                     "experiment_id": experiment_id,
                     "step_id": step_id,
                     "source_ids": prompt.get("source_ids", selected.get("source_ids", [])),
@@ -166,7 +176,7 @@ def retrieve_pipeline_experiment(
             }
         )
 
-    return {
+    return bind_source_quantities({
         "name": selected.get("title") or experiment_id or query,
         "description": selected.get("educational_goal", ""),
         "subject": selected.get("subject", ""),
@@ -178,10 +188,13 @@ def retrieve_pipeline_experiment(
             "retrieval_score": score,
             "source_ids": selected.get("source_ids", []),
             "source_status": selected.get("status"),
+            "selected_protocol_variant": selected.get("selected_protocol_variant"),
+            "quantity_review": selected.get("quantity_review", {}),
+            "rendering_contract": selected.get("rendering_contract", {}),
             "manual_review_required": bool(
                 selected.get("manual_review_required", False)
                 or any(clip["metadata"]["manual_review_required"] for clip in clips)
             ),
         },
         "clips": clips,
-    }
+    })

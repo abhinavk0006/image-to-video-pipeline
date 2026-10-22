@@ -1,0 +1,138 @@
+{
+  "circuit": {
+    "title": "Ohm's law: ideal DC circuit",
+    "size": [
+      1000,
+      700
+    ],
+    "ground": "g",
+    "nodes": {
+      "p": [
+        150,
+        180
+      ],
+      "s": [
+        350,
+        180
+      ],
+      "a": [
+        550,
+        180
+      ],
+      "r": [
+        700,
+        180
+      ],
+      "b": [
+        700,
+        480
+      ],
+      "g": [
+        150,
+        480
+      ],
+      "v1": [
+        880,
+        180
+      ],
+      "v2": [
+        880,
+        480
+      ]
+    },
+    "components": [
+      {
+        "id": "cell",
+        "kind": "battery",
+        "n1": "p",
+        "n2": "g",
+        "value": 3,
+        "label": "Cell",
+        "label_dx": -68,
+        "label_dy": 0
+      },
+      {
+        "id": "key",
+        "kind": "switch",
+        "n1": "p",
+        "n2": "s",
+        "closed": false,
+        "label": "K"
+      },
+      {
+        "id": "lead",
+        "kind": "wire",
+        "n1": "s",
+        "n2": "a"
+      },
+      {
+        "id": "meter_a",
+        "kind": "ammeter",
+        "n1": "a",
+        "n2": "r",
+        "label": "A"
+      },
+      {
+        "id": "resistor",
+        "kind": "resistor",
+        "n1": "r",
+        "n2": "b",
+        "value": 100,
+        "label": "R",
+        "label_dx": -70,
+        "label_dy": 0
+      },
+      {
+        "id": "return",
+        "kind": "wire",
+        "n1": "b",
+        "n2": "g"
+      },
+      {
+        "id": "voltage_lead_1",
+        "kind": "wire",
+        "n1": "r",
+        "n2": "v1"
+      },
+      {
+        "id": "voltage_lead_2",
+        "kind": "wire",
+        "n1": "b",
+        "n2": "v2"
+      },
+      {
+        "id": "meter_v",
+        "kind": "voltmeter",
+        "n1": "v1",
+        "n2": "v2",
+        "label": "V",
+        "label_dx": 60,
+        "label_dy": 0
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "at_seconds": 1,
+      "changes": {
+        "key": {
+          "closed": true,
+          "highlight": true
+        }
+      }
+    },
+    {
+      "at_seconds": 3,
+      "changes": {
+        "cell": {
+          "value": 6
+        },
+        "key": {
+          "highlight": false
+        }
+      }
+    }
+  ],
+  "source_reviewed": false,
+  "note": "Illustrative ideal DC diagram; validate against the selected NCERT figure before instructional use."
+}

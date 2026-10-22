@@ -38,6 +38,7 @@ class PromptBuilder:
 	def build_image_prompt(self, experiment: Experiment, scene: Scene, clip: Clip) -> str:
 		parts = [
 			f"Create a {experiment.name} scene",
+			f"Required starting conditions: {'; '.join(clip.metadata.get('science_spec', {}).get('preconditions', []))}" if clip.metadata.get('science_spec', {}).get('preconditions') else '',
 			experiment.description,
 			scene.scene,
 			f"Camera: {scene.camera}" if scene.camera else "",
@@ -92,22 +93,26 @@ class PromptBuilder:
 			self.motion_suffix,
 		]
 		text = " ".join([clip.target_object, clip.action, clip.state_after, action_text]).lower()
+		target_grounding = []
 		if "litmus" in text:
 			# This specifies where an explicitly requested observation belongs;
 			# it never infers a reagent, reaction, or expected colour.
-			grounding.insert(1, "Keep the litmus paper clearly visible. Any documented litmus colour change occurs on the paper only; the liquid retains its documented colour")
+			target_grounding.append("Keep the litmus paper clearly visible. Any documented litmus colour change occurs on the paper only; the liquid retains its documented colour")
 			if re.search(r"\b(mouth|opening|gas|above)\b", text):
-				grounding.insert(2, "Hold the paper outside the liquid at the existing test tube opening. This shot shows the paper observation only; reagent addition belongs in a separate shot")
+				target_grounding.append("Hold the paper outside the liquid at the existing test tube opening. This shot shows the paper observation only; reagent addition belongs in a separate shot")
 		# Put the action, expected appearance and contact rule ahead of general
 		# styling. CFG=1 Lightning ignores the negative prompt during denoising.
 		critical = [
+			*target_grounding,
 			f"Action: {clip.action}" if clip.action else action_text,
 			*material_constraints(clip),
 			f"Required result: {clip.state_after}" if clip.state_after else "",
 			*liquid_constraints(clip),
 			tool_constraint(clip),
 		]
+		scientific_requirements = [str(item["description"]) for item in clip.metadata.get("science_spec", {}).get("requirements", [])]
 		return _join_sentences([*critical, *grounding,
+			f"Scientific requirements: {'; '.join(scientific_requirements)}" if scientific_requirements else "",
 			f"Starting state: {clip.state_before}" if clip.state_before else "",
 			motion.moving_object, motion.motion,
 			f"Direction: {motion.direction}" if motion.direction else "",

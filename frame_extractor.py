@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
+from video_decode import read_rgb_frames
 import json
 import math
 
@@ -80,7 +81,7 @@ class FrameExtractor:
 
 		reader = None
 		try:
-			reader = imageio_ffmpeg.read_frames(str(input_path), pix_fmt="rgb24")
+			reader = read_rgb_frames(input_path)
 			metadata = next(reader)
 			fps = float(metadata.get("fps") or self.default_fps)
 			if not math.isfinite(fps) or fps <= 0:
@@ -89,7 +90,7 @@ class FrameExtractor:
 				# A second sequential pass keeps memory bounded, including for long clips.
 				frame_count = sum(1 for _ in reader)
 				reader.close()
-				reader = imageio_ffmpeg.read_frames(str(input_path), pix_fmt="rgb24")
+				reader = read_rgb_frames(input_path)
 				metadata = next(reader)
 				selected_index = (frame_count - 1) // 2
 				selected = None

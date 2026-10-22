@@ -1,3 +1,10 @@
+## Experimental scientific evidence work
+
+See [the research guide](SCIENCE_RESEARCH.md) and [implementation checklist](RESEARCH_CHECKLIST.md)
+on `codex/science-evidence-and-runtime-cache`. The new notebook is
+`Wan22_Kaggle_Science_Evidence_Optimized.ipynb`. Research tools and runtime
+optimizations are implemented; target-hardware and scientific validation remain pending.
+
 # Scientific Image-to-Video Generation Pipeline
 
 ## Current persistent-worker notebook — 19 October 2026

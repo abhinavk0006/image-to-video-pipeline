@@ -21,35 +21,10 @@ OUTPUT.mkdir(parents=True, exist_ok=True)
 SOURCES = {"image-to-video-pipeline": REPO,
            "Wan2.2": args.wan_repo or PROJECTS / "Wan2.2",
            "Edu-video-gen-dataset": args.rag_repo or PROJECTS / "Edu-video-gen-dataset"}
-BASES = {
-    "image-to-video-pipeline": "aec8c094420bac9d673be9a278dd8c9e5fe31993",
-    "Wan2.2": "cb7b638da5633cc9e7c95f64ee0eac10b69007cf",
-    "Edu-video-gen-dataset": "53f5bb6fb96208af6c7b1a56492bd9ed1a962186",
-}
-for dependency in ("Wan2.2", "Edu-video-gen-dataset"):
-    actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=SOURCES[dependency], text=True).strip()
-    if actual != BASES[dependency]:
-        raise RuntimeError(f"{dependency} must be at pinned base {BASES[dependency]}, got {actual}")
-FILES = {
-    "image-to-video-pipeline": ["material_plan.py", "material_review.py", "main.py", "config.py", "MATERIAL_BUDGETS.md", "material_state.py", "science_cards.py", "models.py", "knowledge_loader.py", "CONTINUITY_AND_CARDS.md", "frame_extractor.py", "pipeline.py", "prompt_builder.py",
-        "edu_video_rag_adapter.py", "video_generator.py", "stitcher.py", "kaggle_wan_wrapper.py",
-        "test_frame_handoffs.py", "test_video_generator.py", "knowledge/ammonia_litmus_observation.json",
-        "SCIENCE_QUALITY_NOTES.md", "PROJECT_HANDOFF.md", "BENCHMARK.md", "benchmark.py",
-        "benchmark_matrix.json", "test_benchmark.py", "evaluator.py"],
-    "Wan2.2": ["quantization/int8_linear.py", "wan/modules/attention.py", "quantization/kaggle_generate_video.py",
-        "wan/image2video.py", "tests/test_science_worker_optimizations.py"],
-    "Edu-video-gen-dataset": ["scripts/build_rag_prompt_bundle.py", "tests/test_rendering_plans.py"],
-}
-payloads = {f"{repo}/{name}": (SOURCES[repo] / name).read_bytes()
-            for repo, names in FILES.items() for name in names}
-manifest = {"base_commits": BASES, "files": {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}}
-archive = io.BytesIO()
-with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
-    z.writestr("manifest.json", json.dumps(manifest, indent=2))
-    for name, data in payloads.items():
-        z.writestr(name, data)
-bundle = archive.getvalue()
-(OUTPUT / "wan_continuity_cards_update.zip").write_bytes(bundle)
+# Pin complete repository snapshots; never overlay partial old sources onto a new dataset.
+BASES = {name: subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=directory,
+                                    text=True).strip() for name, directory in SOURCES.items()}
+manifest = {"base_commits": BASES, "source_policy": "complete pinned Git snapshots"}
 cells = []
 
 
@@ -61,7 +36,7 @@ def code(source):
     # subprocess cwd only affects the child. Each notebook cell importing local
     # modules must establish the kernel's path itself, including on partial reruns.
     modules = sorted(set(re.findall(
-        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher)\b",
+        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities)\b",
         source, re.MULTILINE)))
     if modules:
         bootstrap = '''import sys, importlib
@@ -78,18 +53,39 @@ importlib.invalidate_caches()
     cells.append({"cell_type": "code", "metadata": {}, "source": source.strip() + "\n", "outputs": [], "execution_count": None})
 
 
-md('''# Persistent Wan worker: continuous material state and science cards
+md('''# Persistent Wan worker: source quantities, continuous state and styled cards
 
-Use Kaggle **Internet + two T4 GPUs**. This notebook pins the three active feature branches to the inspected commits and applies an embedded source update. No separate source upload is needed. It leaves the original notebook and its outputs intact.
+Use Kaggle **Internet + two T4 GPUs**. All three repositories are pinned to complete
+Git snapshots. This notebook consumes the selected dataset protocol rather than a
+hard-coded four-shot demonstration. Source quantities, their roles and page citations
+reach the plan and cards. Unknown doses remain unknown.
 
-The default experiment is the same four-shot chloride demonstration. Choose `litmus` below for a separate paper-colour regression shot. That requires a reference image already showing **one tube, colourless liquid, and damp red litmus in forceps above the opening**. Reagent preparation belongs in earlier shots; it is not generated during the paper observation.
+The default chloride confirmation starts with a **prepared 1 mL test aliquot**
+(source step 1), then renders source steps 2–4. It does not include dissolving dry
+salt. Supply a matching starting image; the old dry-salt image is unsuitable here.
+Other protocols require their own reviewed sample mapping and reference images.
 
-The default `safe_2s` profile retains the original 33-frame temporal workload because longer shots previously ran out of memory on this setup. Its name does not guarantee that every resolution fits. `experimental_3s` uses 49 frames at a lower area and still needs hardware validation. `PLAYBACK_RATE` changes presentation speed on CPU; it adds no denoising work and cannot repair an incorrect reaction. The four-step Lightning model uses CFG=1, so the positive prompt carries the spatial and scientific constraints.''')
+The default safe_2s profile retains 33 frames. Longer shots remain experimental.
+Playback slowdown adds no generated frames and cannot repair incorrect chemistry.
+Four-step Lightning uses CFG=1, so constraints are carried in the positive prompt.''')
 code('''import base64, gc, hashlib, io, json, os, subprocess, sys, time, zipfile
 from pathlib import Path
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 ROOT = Path("/kaggle/working")
-EXPERIMENT = "chloride"  # "chloride" or "litmus"
+EXPERIMENT = "chloride"  # "chloride", "dataset", or the separate "litmus" regression fixture
+DATASET_EXPERIMENT_ID = "chem_12_301"
+DATASET_PROTOCOL = "chloride_silver"
+PROTOCOL_START_STEP = 2  # chloride step 1 prepares the source's 1 mL aliquot
+INITIAL_IMAGE_NAME = "chloride_1ml_aliquot.png"  # must match the selected starting state
+REFERENCE_IMAGES = {}  # other clip names -> mounted image paths, for separate samples
+# Explicitly reviewed mapping for this same-aliquot chloride confirmation only.
+# For another protocol, replace this mapping; generic sample_id='reaction' is not proof of continuity.
+SAMPLE_TRACKS = {"clip_2_2": "chloride_aliquot", "clip_3_3": "chloride_aliquot", "clip_4_4": "chloride_aliquot"}
+USE_VAE_CPU_STREAMING = False  # opt-in memory comparison; does not lower attention activation memory
+STREAM_EXPERT_TO_GPU = False  # opt-in conversion path; validate separately
+CPU_EXPERT_CACHE_GIB = 14  # high expert only; host headroom guard may evict/skip it
+EXPERT_CACHE_DIR = None  # optional converted disk cache; two experts need about 27 GiB
+PROMPT_CACHE_DIR = ROOT / "wan_prompt_cache"
 PROFILE = "safe_2s"     # "safe_2s", "fast_preview", or "experimental_3s"
 SAMPLING_MODE = "lightning"  # optional "base": slower 20-step CFG comparison, no Lightning LoRA
 BASE_STEPS = 20
@@ -104,15 +100,14 @@ EXPERT_SOURCE_DIR = None  # optional /kaggle/input/... folder with the two Comfy
 PROFILE_STAGES = True     # synchronizes CUDA phase boundaries and saves timing/memory sidecars
 MATERIAL_PLAN_MODE = "strict"  # requires documented doses and a cumulative vessel budget before GPU work
 MATERIAL_REVIEW_MODE = "observe"  # "strict" pauses at each clip for hash-bound human review before chaining
+SCIENCE_MODE = "observe"  # save evidence/review scaffolds; pending reviews are never accuracy scores
 MATERIAL_OVERRIDES = {}   # clip name -> source-backed liquid_state fields; no guessed quantities
-assert EXPERIMENT in {"chloride", "litmus"} and 0 < PLAYBACK_RATE <= 1
+assert EXPERIMENT in {"chloride", "dataset", "litmus"} and 0 < PLAYBACK_RATE <= 1
 OUT = ROOT / f"wan_continuous_state_{EXPERIMENT}_{PROFILE}_{SAMPLING_MODE}"
 OUT.mkdir(parents=True, exist_ok=True)
 print(SETTINGS, "playback rate:", PLAYBACK_RATE)''')
-code('''SOURCE_UPDATE_B64 = "'''+base64.b64encode(bundle).decode()+'''"
-update = zipfile.ZipFile(io.BytesIO(base64.b64decode(SOURCE_UPDATE_B64)))
-manifest = json.loads(update.read("manifest.json"))
-refs = {"Wan2.2": "feature/persistent-wan-worker", "image-to-video-pipeline": "feature/persistent-wan-worker", "Edu-video-gen-dataset": "feature/structured-reference-plans"}
+code('''manifest = ''' + repr(manifest) + '''
+refs = {"Wan2.2": "feature/persistent-wan-worker", "image-to-video-pipeline": "feature/persistent-wan-worker", "Edu-video-gen-dataset": "main"}
 for name, revision in manifest["base_commits"].items():
     path = ROOT / name
     if not path.exists():
@@ -124,27 +119,16 @@ for name, revision in manifest["base_commits"].items():
             raise RuntimeError(f"{name} has edits at a different revision. Preserve that clone and use a fresh Kaggle session.")
         subprocess.run(["git", "fetch", "origin", refs[name]], cwd=path, check=True)
         subprocess.run(["git", "checkout", "--detach", revision], cwd=path, check=True)
-for name, expected_hash in manifest["files"].items():
-    relative = Path(name)
-    assert relative.parts[0] in refs and not relative.is_absolute() and ".." not in relative.parts
-    data = update.read(name)
-    assert hashlib.sha256(data).hexdigest() == expected_hash
-    destination = ROOT / relative
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.exists() and destination.read_bytes() != data:
-        backup = destination.with_name(destination.name + ".before_science_update")
-        if not backup.exists():
-            backup.write_bytes(destination.read_bytes())
-    destination.write_bytes(data)
 pipeline = ROOT / "image-to-video-pipeline"
 sys.path.insert(0, str(pipeline))
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "Edu-video-gen-dataset" / "requirements.txt"),
     "diffusers>=0.31,<0.33", "transformers>=4.49,<=4.51.3", "accelerate>=1.1.1", "easydict", "safetensors", "ftfy", "huggingface_hub", "imageio", "imageio-ffmpeg", "Pillow>=10.1", "matplotlib"], check=True)
 (OUT / "source_manifest.json").write_text(json.dumps(manifest, indent=2))
-print("Pinned bases plus verified embedded source update:", manifest["base_commits"])''')
+print("Complete pinned source snapshots:", manifest["base_commits"])''')
 md('''## Source quantities and material preflight
-The current retrieved salt-analysis record does not specify reagent amounts or
-vessel capacity. The fixture also has no authoritative quantities. Supply them
+The selected source records distinguish aliquots, reagent doses, stocks, capacities,
+conditions and endpoints. For chloride the initial aliquot is 1 mL, but acid,
+AgNO3, NH4OH doses and vessel working capacity are unspecified. Supply missing facts
 through `MATERIAL_OVERRIDES` in the configuration cell using the schema in
 `MATERIAL_BUDGETS.md`. Do not assume equal doses or a universal drop volume.
 
@@ -159,90 +143,67 @@ timestamped human review. `observe` records pending reviews and permits continua
 an explicitly failed review always stops propagation. No automatic chemistry
 verifier is supplied.
 ''')
-md('''## Build atomic shot plans
-The chloride plan uses one starting image, then the **actual final decoded frame of the preceding generated shot** for every continuing operation. A named material-state track prevents static reference images from resetting the tube. These frames carry the generated state; they still need scientific review. Declare `starts_new_sample` with a separate image when a procedure intentionally changes aliquot. No shot asks for pouring, swirling and indicator testing together.
+md('''## Build the selected source plan
+The same declared sample uses the actual final decoded frame of its preceding clip.
+Fresh aliquots and changed apparatus require separate references. The notebook rejects
+unsplit composite actions. Draft scientific requirements and visibility/evidence tools
+remain available; they are not an automatic chemical-accuracy verifier.
 
-For the optional litmus shot, the gas-producing preparation must already be complete. The fixture only evaluates the visible paper response. It remains a visual test and needs source and video review before instructional use.''')
-code('''def unique_input(name):
+Plan and cards can be inspected before supplying an image. The generation cell checks
+that the matching initial reference is mounted. Inspect every reference and raw output.''')
+code('''from edu_video_rag_adapter import retrieve_pipeline_experiment
+from knowledge_loader import _parse_clip
+from models import Experiment
+from material_state import prepare_state_tracks
+from material_plan import compile_material_plan
+
+def unique_input(name):
     matches = list(Path("/kaggle/input").rglob(name))
     if len(matches) != 1:
         raise RuntimeError(f"Mount exactly one {name}; found {len(matches)}")
     return matches[0]
 
 if EXPERIMENT == "litmus":
-    fixture = json.loads((pipeline / "knowledge" / "ammonia_litmus_observation.json").read_text())
-    INITIAL_IMAGE = unique_input("ammonia_litmus_ready.png")
-    fixture["clips"][0]["input_frame_path"] = str(INITIAL_IMAGE)
-    fixture["clips"][0]["duration_seconds"] = SETTINGS["seconds"]
+    fixture = json.loads((pipeline / "knowledge/ammonia_litmus_observation.json").read_text())
+    INITIAL_IMAGE_NAME = "ammonia_litmus_ready.png"
+    INITIAL_IMAGE = None
 else:
-    DRY_IMAGE = unique_input("salt_analysis_one_test_tube_dry_salt.jpeg")
-    INITIAL_IMAGE = DRY_IMAGE
     rag = ROOT / "Edu-video-gen-dataset"
-    if not (rag / "rag_index_matrix.npz").exists():
-        subprocess.run([sys.executable, "scripts/build_rag_index.py"], cwd=rag, check=True)
-    bundle_path = OUT / "rag_bundle.json"
-    subprocess.run([sys.executable, "scripts/build_rag_prompt_bundle.py", "Detect one cation and one anion in a salt", "--top-k", "1", "--output", str(bundle_path)], cwd=rag, check=True)
-    rag_record = json.loads(bundle_path.read_text())["retrieved_experiments"][0]
-    assert all(word in rag_record["title"].lower() for word in ("cation", "anion")), rag_record["title"]
-    print("Retrieved:", rag_record["title"], rag_record.get("retrieval_score"))
-    def shot(name, image, before, action, after, procedure, observation, chained=False):
-        result = {
-            "name": name, "input_frame_path": str(image) if image else None,
-            "state_track": "chloride_sample_1", "tool_contact_policy": "above_rim",
-            "liquid_state": {"level_change": "increase", "after_appearance": after},
-            "scene": {"camera": "Locked close view; keep the existing test tube fixed"},
-            "state_before": before, "action": action, "state_after": after,
-            "duration_seconds": SETTINGS["seconds"], "continuity_required": chained,
-            "reference_mode": "chained" if chained else "independent", "needs_reference_image": not chained,
-            "reference_policy": "previous_state_keyframe" if chained else "state_keyframe",
-            "target_object": "the contents of the single existing test tube",
-            "preserve_objects": ["the existing test tube and holder", "the laboratory background"],
-            "quantity_constraint": "Use this step's documented dose, not an equal dose for every reagent. Preserve the starting liquid and headspace.",
-            "observable_target": after,
-            "action_pacing": "Dispense only the specified dose, stop delivery, then show the documented endpoint throughout the contents. Use mixing only when the source calls for it; no time lapse.",
-            "procedure_text": procedure, "observation_text": observation,
-            "prompt_bundle": {"stop_condition": after, "negative_prompt": "extra tube, duplicate vessel, fast motion, camera movement"},
-        }
-        if chained:
-            result.update(handoff_policy="final", handoff_entity="the same sample and meniscus in the existing tube")
-        return result
-    fixture = {"name": "One-Tube Chloride Salt Analysis", "subject": "Qualitative salt analysis",
-        "educational_goal": "Observe chloride confirmation with silver nitrate and ammonia in a controlled one-tube visual sequence.",
-        "metadata": {"manual_review_required": True, "manual_review_reasons": ["Controlled visual fixture: confirm procedure details against the source manual before instructional use."]},
-        "rag_experiment": rag_record,
-        "conclusion_text": "The white silver chloride precipitate dissolves in ammonia, supporting the chloride identification.",
-        "clips": [
-            shot("prepare_unknown_salt", DRY_IMAGE, "One test tube contains white salt.",
-                "Slowly add distilled water from one dropper into the existing test tube; keep the tube stationary.",
-                "The salt dissolves in the water in that same tube, leaving a clear colourless solution.",
-                "Add distilled water to the salt.", "The salt dissolves to form a clear solution."),
-            shot("acidify_unknown_solution", None, "The existing test tube contains clear colourless salt solution.",
-                "Slowly add dilute nitric acid from one dropper into the existing tube.",
-                "The solution remains clear and colourless.", "Acidify the solution with dilute nitric acid.", "The solution remains clear and colourless.", chained=True),
-            shot("silver_nitrate_chloride_test", None, "The existing tube contains clear colourless acidified salt solution.",
-                "Slowly add dilute silver nitrate from one dropper into the existing tube.",
-                "A white curdy precipitate forms and stays visible inside that same tube.",
-                "Add dilute silver nitrate to the acidified solution.", "A white curdy silver chloride precipitate forms.", chained=True),
-            shot("ammonia_dissolves_chloride_ppt", None, "The same tube contains the white precipitate visible in the preceding shot.",
-                "Slowly add dilute ammonia from one dropper into the same tube.",
-                "The existing white precipitate dissolves, leaving a clear colourless solution in the same tube.",
-                "Add dilute ammonia to the silver chloride precipitate.", "The precipitate dissolves; the solution becomes clear.", chained=True),
-        ]}
+    # Rebuild the portable TF-IDF artifacts with this kernel's sklearn version.
+    subprocess.run([sys.executable, "scripts/build_rag_index.py"], cwd=rag, check=True)
+    fixture = retrieve_pipeline_experiment(
+        "Detect one cation and one anion in a salt" if EXPERIMENT == "chloride" else DATASET_EXPERIMENT_ID,
+        rag, clip_duration_seconds=SETTINGS["seconds"],
+        protocol_selections={DATASET_EXPERIMENT_ID: DATASET_PROTOCOL})
+    full_protocol = list(fixture["clips"])
+    assert 1 <= PROTOCOL_START_STEP <= len(full_protocol)
+    fixture["metadata"]["omitted_preparation_steps"] = full_protocol[:PROTOCOL_START_STEP-1]
+    fixture["clips"] = full_protocol[PROTOCOL_START_STEP-1:]
+    INITIAL_IMAGE = None
+    if EXPERIMENT == "chloride":
+        assert (DATASET_EXPERIMENT_ID, DATASET_PROTOCOL, PROTOCOL_START_STEP) == ("chem_12_301", "chloride_silver", 2)
+        # This is the volume of the prepared aliquot, never a reagent dose.
+        fixture["clips"][0].setdefault("liquid_state", {}).update(before_ml=1.0)
+        fixture["metadata"]["initial_sample_evidence"] = full_protocol[0]["metadata"]["source_evidence"]
+        fixture["description"] = "Start with the source's prepared 1 mL test aliquot; review its identity, appearance and acidification endpoint."
+        fixture["educational_goal"] = fixture["description"]
+    fixture["name"] = f"{DATASET_EXPERIMENT_ID} — {DATASET_PROTOCOL}"
+    fixture["conclusion_text"] = "Interpret the documented observation only after reviewing the complete procedure and generated evidence."
+
 clips = fixture["clips"]
-if EXPERIMENT == "chloride":
-    clips[0]["liquid_state"].update(solid_change="The original salt grains visibly shrink and disappear", after_clarity="clear", after_colour="colourless", after_solid="none", reaction_scope="whole_contents")
-    clips[0]["liquid_state"]["after_appearance"] = "optically transparent colourless liquid; the background is visible through the full column"
-    clips[1]["liquid_state"]["after_appearance"] = "transparent colourless solution, no precipitate"
-    clips[2]["liquid_state"]["after_appearance"] = "white curdy precipitate in the liquid, as documented"
-    clips[1]["liquid_state"].update(after_clarity="clear", after_colour="colourless")
-    clips[3]["liquid_state"].update(after_appearance="transparent colourless solution throughout", solid_change="The existing precipitate dissolves and disappears", after_clarity="clear", after_colour="colourless", after_solid="none", reaction_scope="whole_contents")
 for item in clips:
+    if item.get("requires_clip_split"):
+        raise ValueError(f"{item['name']} combines operations. Split it into reviewed atomic shots before GPU work.")
+    item["duration_seconds"] = SETTINGS["seconds"]
+    # Discard legacy catalogue image URLs; source selection needs reviewed starting states.
+    item["input_frame_path"] = REFERENCE_IMAGES.get(item["name"])
+    item["state_track"] = SAMPLE_TRACKS.get(item["name"], "") if EXPERIMENT != "litmus" else ""
+    if item is not clips[0] and not (item["state_track"] or item["input_frame_path"] or item.get("reference_clip")):
+        raise ValueError(f"{item['name']}: explicitly map the sample track or provide its separate reference; do not infer continuity from adjacent steps.")
     item["liquid_state"] = {**item.get("liquid_state", {}), **MATERIAL_OVERRIDES.get(item["name"], {})}
-# Resolve tracks in the saved plan as well, so benchmark dependencies are explicit.
-from knowledge_loader import _parse_clip
-from models import Experiment
-from material_state import prepare_state_tracks
-from material_plan import compile_material_plan
+    item.setdefault("procedure_text", item.get("action", ""))
+    item.setdefault("observation_text", item.get("state_after", ""))
+    print(item["name"], item["procedure_text"], item.get("metadata", {}).get("source_quantity_citation", ""), sep="\n")
 plan = Experiment(name=fixture["name"], clips=[_parse_clip(item, index) for index, item in enumerate(clips)])
 prepare_state_tracks(plan)
 material_report = compile_material_plan(plan)
@@ -253,10 +214,9 @@ for row in material_report["clips"]:
 for item, resolved in zip(clips, plan.clips):
     item.update(reference_clip=resolved.reference_clip, reference_mode=resolved.reference_mode,
                 continuity_required=resolved.continuity_required, handoff_policy=resolved.handoff_policy)
-experiment_slug = "one_tube_chloride_salt_analysis" if EXPERIMENT == "chloride" else "ammonia_litmus_observation"
+experiment_slug = "selected_source_protocol" if EXPERIMENT != "litmus" else "ammonia_litmus_observation"
 fixture_path = OUT / "experiment.json"
 fixture_path.write_text(json.dumps(fixture, indent=2))
-print("Generated frames per shot:", max(17, 4 * __import__("math").ceil((SETTINGS["seconds"] * 16 - 1) / 4) + 1))
 print("Shots:", [item["name"] for item in clips])''')
 code('''from PIL import Image
 from science_cards import render_cards
@@ -277,9 +237,13 @@ md('''## Generate and inspect
 The worker caches positive T5 contexts once. It remains persistent, but the streamed experts still need loading and conversion. Optional `EXPERT_SOURCE_DIR` reads mounted expert weights directly and avoids those repeated network transfers. Both filenames must match the original Comfy checkpoints.
 
 Inspect raw clips and the three handoff images below. Check vessel count, target of colour change, action order, and whether the final state actually exists before chaining.''')
-code('''command = [sys.executable, "main.py", "--knowledge-file", str(fixture_path),
+code('''INITIAL_IMAGE = unique_input(INITIAL_IMAGE_NAME)
+clips[0]["input_frame_path"] = str(INITIAL_IMAGE)
+fixture_path.write_text(json.dumps(fixture, indent=2))
+command = [sys.executable, "main.py", "--knowledge-file", str(fixture_path),
     "--material-plan-mode", MATERIAL_PLAN_MODE,
     "--material-review-mode", MATERIAL_REVIEW_MODE,
+    "--science-mode", SCIENCE_MODE,
     "--initial-image", str(INITIAL_IMAGE), "--experiment-name", experiment_slug,
     "--output-dir", str(OUT), "--generator-script", "kaggle_wan_wrapper.py",
     "--generator-executable", sys.executable, "--generator-working-dir", str(pipeline),
@@ -287,6 +251,14 @@ code('''command = [sys.executable, "main.py", "--knowledge-file", str(fixture_pa
     "--continuity-mode", "chain", "--wan-max-area", str(SETTINGS["area"]),
     f"--generator-arg=--sampling-mode={SAMPLING_MODE}", f"--generator-arg=--base-steps={BASE_STEPS}", "--generator-arg=--gpu0-memory-gib=5",
     "--generator-arg=--gpu1-memory-gib=11", "--wan-memory-telemetry"]
+command.extend([f"--generator-arg=--cpu-expert-cache-gib={CPU_EXPERT_CACHE_GIB}",
+                f"--generator-arg=--prompt-cache-dir={PROMPT_CACHE_DIR}"])
+if EXPERT_CACHE_DIR:
+    command.append(f"--generator-arg=--expert-cache-dir={EXPERT_CACHE_DIR}")
+if USE_VAE_CPU_STREAMING:
+    command.append("--generator-arg=--vae-stream-to-cpu")
+if STREAM_EXPERT_TO_GPU:
+    command.append("--generator-arg=--stream-expert-to-gpu")
 for area in SETTINGS["fallbacks"]:
     command.extend(["--wan-fallback-area", str(area)])
 if EXPERT_SOURCE_DIR:
@@ -358,4 +330,4 @@ destination.write_text(json.dumps(nb, indent=1), encoding="utf-8")
 for index, cell in enumerate(cells):
     if cell["cell_type"] == "code":
         compile(cell["source"], f"notebook_cell_{index}", "exec")
-print(f"Built {destination}; {len(cells)} cells; embedded source {len(bundle):,} bytes; all Python cells compile")
+print(f"Built {destination}; {len(cells)} cells; complete pinned snapshots; all Python cells compile")

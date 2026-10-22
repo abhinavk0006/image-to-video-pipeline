@@ -1,3 +1,17 @@
+## Research quality evaluation
+
+`research_metrics.py` prepares or runs official VBench custom-input quality
+metrics. `research.py` supports scientific evidence review, challenge videos,
+blinded assignments and explicit percentages with denominators. See
+`SCIENCE_RESEARCH.md`. The runtime reports below remain useful profiling tools;
+they do not substitute for perceptual or scientific research evaluation.
+
+For runtime optimization comparisons, use `benchmark.py run --matrix
+research/runtime_ablation_matrix.json` with the normal knowledge/worker/output
+arguments and explicit `--cases` selections. Cache-disabled, CPU-reuse, VAE,
+per-channel and contiguous-placement cases keep the same 2-second duration and
+area. Prompt caches are isolated per case. All results remain unmeasured.
+
 # Acceptance criteria and benchmark
 
 The target is a long, scientifically correct sequence with reliable state handoffs and low wall time on two T4s. A longer or faster video is useful only when its observations and procedure remain correct. The selection metric is **scientifically accepted generated seconds per wall-clock second**, subject to complete sequence generation and acceptable visual detail. Playback slowdown and title cards do not count as generated seconds.

@@ -4,14 +4,44 @@
 
 `Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb` replaces the old quality notebook
 for this iteration. Use a fresh Kaggle session with Internet and two T4s. It only
-requires the initial `salt_analysis_one_test_tube_dry_salt.jpeg` reference for the
-chloride sequence. The other operations consume actual generated final frames.
+uses the selected dataset protocol and its actual source quantities. The default
+chloride confirmation starts with a prepared 1 mL test aliquot and requires a
+matching `chloride_1ml_aliquot.png` reference. Dry-salt preparation is a separate
+protocol, and the old dry-salt image must not be used for this initial state.
+The other operations consume actual generated final frames.
 The output folder is different from the preceding experiment, preserving its clips.
 
 The 33-frame, approximately 2.06-second generation workload and area fallbacks are
 unchanged. The 1280×720 cards and final presentation are rendered on CPU; this does
 not increase native video detail. Slow playback does not add generated frames.
 Longer generation remains experimental given the reported GPU1 peak of 14.17 GiB.
+
+### Source quantities and unresolved doses
+
+The adapter accepts `protocol_selections={"chem_12_301": "chloride_silver"}`;
+the CLI equivalent is `--rag-protocol chem_12_301=chloride_silver`. Alternative
+tests are never concatenated. `source_quantities.py` carries typed quantity facts,
+their roles, notes and PDF citations into plan metadata and procedure cards.
+Only a single exact sourced addition/transfer becomes a numeric reagent dose.
+An aliquot, stock quantity, vessel capacity, range or unspecified amount does not.
+Drop counts remain drops without a sourced calibration.
+
+The default source protocol has no exact HNO3, AgNO3 or NH4OH doses or vessel
+working capacity. `MATERIAL_PLAN_MODE="strict"` therefore stops before GPU work
+until those gaps are resolved. `warn` permits a visibly unvalidated trial and
+records the unresolved budget. Neither mode establishes scientific accuracy.
+Use source-backed `MATERIAL_OVERRIDES`; never guess equal reagent volumes.
+
+The notebook pins complete Git snapshots of all three repositories, avoiding the
+old partial source overlay that could leave the dataset and runtime inconsistent.
+For other protocols, review `SAMPLE_TRACKS`, separate reference images and any
+composite steps. No generic `sample_id="reaction"` is treated as proof that all
+operations share a vessel. Physics numerical enrichment awaits its source manual.
+
+Bounded high-expert CPU caching is available with host headroom checks. Disk
+expert caching, VAE output streaming and direct-to-GPU expert conversion are
+configurable in the notebook. Precision and placement experiments remain opt-in;
+see Wan's `quantization/RUNTIME_OPTIMIZATIONS.md`. No speedup is established yet.
 
 ## General contracts
 

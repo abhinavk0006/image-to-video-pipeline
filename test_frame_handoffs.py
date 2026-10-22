@@ -106,6 +106,10 @@ class HandoffTests(unittest.TestCase):
             reference_clip="source", reference_mode="chained", continuity_required=True)
         self.assertTrue(clip_requires_continuity("independent", clip))
         clip.continuity_required = False
+        # A stale boolean cannot bypass an explicitly declared generated-state reference.
+        self.assertTrue(clip_requires_continuity("chain", clip))
+        clip.reference_clip = ""
+        clip.reference_mode = "independent"
         self.assertFalse(clip_requires_continuity("chain", clip))
 
     def test_mixed_resolution_fallback_clips_are_normalized_before_concat(self):

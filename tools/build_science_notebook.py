@@ -1,0 +1,318 @@
+"""Package the reviewed source changes into a self-contained Kaggle notebook."""
+import base64
+import hashlib
+import io
+import json
+from pathlib import Path
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[1]
+PROJECTS = ROOT.parent
+OUTPUT = ROOT / "notebooks"
+OUTPUT.mkdir(exist_ok=True)
+BASES = {
+    "image-to-video-pipeline": "aec8c094420bac9d673be9a278dd8c9e5fe31993",
+    "Wan2.2": "cb7b638da5633cc9e7c95f64ee0eac10b69007cf",
+    "Edu-video-gen-dataset": "53f5bb6fb96208af6c7b1a56492bd9ed1a962186",
+}
+FILES = {
+    "image-to-video-pipeline": ["README.md", "frame_extractor.py", "pipeline.py", "prompt_builder.py",
+        "edu_video_rag_adapter.py", "video_generator.py", "stitcher.py", "kaggle_wan_wrapper.py",
+        "test_frame_handoffs.py", "test_video_generator.py", "knowledge/ammonia_litmus_observation.json",
+        "SCIENCE_QUALITY_NOTES.md", "PROJECT_HANDOFF.md", "BENCHMARK.md", "benchmark.py",
+        "benchmark_matrix.json", "test_benchmark.py", "evaluator.py", "models.py", "config.py", "main.py", "knowledge_loader.py", "science_evidence.py", "research.py", "research_metrics.py", "circuit_renderer.py", "video_decode.py", "SCIENCE_RESEARCH.md", "RESEARCH_CHECKLIST.md", "research/STUDENT_STUDY.md", "research/runtime_ablation_matrix.json", "research/examples/ohms_law_circuit.json", "research/examples/ohms_law_pipeline.json", "research/examples/reviewed_profile_template.json", "research/examples/challenge_manifest_template.json", "research/examples/study_scores_template.csv"],
+    "Wan2.2": ["README.md", "quantization/int8_linear.py", "wan/modules/attention.py", "quantization/kaggle_generate_video.py",
+        "wan/image2video.py", "tests/test_science_worker_optimizations.py", "wan/modules/vae2_1.py", "quantization/kaggle_single_expert.py", "quantization/runtime_cache.py", "quantization/precision_calibration.py", "quantization/RUNTIME_OPTIMIZATIONS.md"],
+    "Edu-video-gen-dataset": ["README.md", "scripts/build_rag_prompt_bundle.py", "tests/test_rendering_plans.py", "scripts/science_contract.py", "schema/experiment.schema.json", "SCIENCE_CONTRACTS.md"],
+}
+payloads = {f"{repo}/{name}": (PROJECTS / repo / name).read_bytes()
+            for repo, names in FILES.items() for name in names}
+manifest = {"base_commits": BASES, "files": {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}}
+archive = io.BytesIO()
+with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("manifest.json", json.dumps(manifest, indent=2))
+    for name, data in payloads.items():
+        z.writestr(name, data)
+bundle = archive.getvalue()
+(OUTPUT / "wan_science_evidence_update.zip").write_bytes(bundle)
+cells = []
+
+
+def md(source):
+    cells.append({"cell_type": "markdown", "metadata": {}, "source": source.strip() + "\n"})
+
+
+def code(source):
+    cells.append({"cell_type": "code", "metadata": {}, "source": source.strip() + "\n", "outputs": [], "execution_count": None})
+
+
+md('''# Scientific evidence and bounded runtime optimizations
+
+Use Kaggle **Internet + two T4 GPUs**. This notebook pins the three active feature branches to the inspected commits and applies an embedded source update. No separate source upload is needed. Use a fresh session; keep the current baseline run intact. This experimental branch adds CPU expert reuse, prompt disk caching, streamed VAE output and optional scientific evidence collection. Performance and scientific quality are not yet validated on two T4s. It leaves the original notebook and its outputs intact.
+
+The default experiment is the same four-shot chloride demonstration. Choose `litmus` below for a separate paper-colour regression shot. That requires a reference image already showing **one tube, colourless liquid, and damp red litmus in forceps above the opening**. Reagent preparation belongs in earlier shots; it is not generated during the paper observation.
+
+The default `safe_2s` profile retains the original 33-frame temporal workload because longer shots previously ran out of memory on this setup. Its name does not guarantee that every resolution fits. `experimental_3s` uses 49 frames at a lower area and still needs hardware validation. `PLAYBACK_RATE` changes presentation speed on CPU; it adds no denoising work and cannot repair an incorrect reaction. The four-step Lightning model uses CFG=1, so the positive prompt carries the spatial and scientific constraints.''')
+code('''import base64, gc, hashlib, io, json, os, subprocess, sys, time, zipfile
+from pathlib import Path
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+ROOT = Path("/kaggle/working")
+EXPERIMENT = "chloride"  # "chloride" or "litmus"
+PROFILE = "safe_2s"     # "safe_2s", "fast_preview", or "experimental_3s"
+SAMPLING_MODE = "lightning"  # optional "base": slower 20-step CFG comparison, no Lightning LoRA
+BASE_STEPS = 20
+PROFILES = {
+    "safe_2s": {"seconds": 2.0, "area": 345600, "fallbacks": [230400, 172800]},
+    "fast_preview": {"seconds": 2.0, "area": 230400, "fallbacks": [172800]},
+    "experimental_3s": {"seconds": 3.0, "area": 230400, "fallbacks": [172800]},
+}
+SETTINGS = PROFILES[PROFILE]
+PLAYBACK_RATE = 0.5       # 33 frames at 16 FPS -> about 4.125 presented seconds; no extra generated frames
+EXPERT_SOURCE_DIR = None  # optional /kaggle/input/... folder with the two Comfy FP8 expert files
+CPU_EXPERT_CACHE_GIB = 14  # high-noise expert only; 0 disables; evicted if host RAM is needed
+HOST_RESERVE_GIB = 3
+EXPERT_CACHE_DIR = None    # optional: both converted experts need about 27 GiB plus source space
+STREAM_EXPERT_TO_GPU = True  # place each converted tensor directly on its planned GPU
+VAE_STREAM_TO_CPU = True
+QUANTIZATION = "per_tensor"  # opt-in comparison: "per_channel"
+KEEP_FP16 = []            # optional measured module-name globs; increases storage
+PLACEMENT = "balanced"   # opt-in comparison: "contiguous"
+SCIENCE_MODE = "observe" # writes pending evidence; "strict" requires annotations/reviews
+PROFILE_STAGES = True     # synchronizes CUDA phase boundaries and saves timing/memory sidecars
+assert EXPERIMENT in {"chloride", "litmus"} and 0 < PLAYBACK_RATE <= 1
+OUT = ROOT / f"wan_science_evidence_{EXPERIMENT}_{PROFILE}_{SAMPLING_MODE}"
+OUT.mkdir(parents=True, exist_ok=True)
+print(SETTINGS, "playback rate:", PLAYBACK_RATE)''')
+code('''SOURCE_UPDATE_B64 = "'''+base64.b64encode(bundle).decode()+'''"
+update = zipfile.ZipFile(io.BytesIO(base64.b64decode(SOURCE_UPDATE_B64)))
+manifest = json.loads(update.read("manifest.json"))
+refs = {name: "codex/science-evidence-and-runtime-cache" for name in manifest["base_commits"]}
+for name, revision in manifest["base_commits"].items():
+    path = ROOT / name
+    if not path.exists():
+        subprocess.run(["git", "clone", "--branch", refs[name], f"https://github.com/abhinavk0006/{name}.git", str(path)], check=True)
+    current = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path, text=True).strip()
+    if current != revision:
+        dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=path, text=True).strip()
+        if dirty:
+            raise RuntimeError(f"{name} has edits at a different revision. Preserve that clone and use a fresh Kaggle session.")
+        subprocess.run(["git", "fetch", "origin", refs[name]], cwd=path, check=True)
+        subprocess.run(["git", "checkout", "--detach", revision], cwd=path, check=True)
+for name, expected_hash in manifest["files"].items():
+    relative = Path(name)
+    assert relative.parts[0] in refs and not relative.is_absolute() and ".." not in relative.parts
+    data = update.read(name)
+    assert hashlib.sha256(data).hexdigest() == expected_hash
+    destination = ROOT / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists() and destination.read_bytes() != data:
+        backup = destination.with_name(destination.name + ".before_science_update")
+        if not backup.exists():
+            backup.write_bytes(destination.read_bytes())
+    destination.write_bytes(data)
+pipeline = ROOT / "image-to-video-pipeline"
+sys.path.insert(0, str(pipeline))
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "Edu-video-gen-dataset" / "requirements.txt"),
+    "diffusers>=0.31,<0.33", "transformers>=4.49,<=4.51.3", "accelerate>=1.1.1", "easydict", "safetensors", "ftfy", "huggingface_hub", "imageio", "imageio-ffmpeg", "Pillow"], check=True)
+(OUT / "source_manifest.json").write_text(json.dumps(manifest, indent=2))
+print("Pinned bases plus verified embedded source update:", manifest["base_commits"])''')
+md('''## CPU preflight
+These tests encode small synthetic videos and verify the selected pixels for all handoff modes, consumer policies, safe resume, and OOM protocol behavior. They do not load Wan or spend GPU generation time.''')
+code('''subprocess.run([sys.executable, "-m", "unittest", "test_frame_handoffs", "test_video_generator", "-v"], cwd=pipeline, check=True)''')
+md('''## Build atomic shot plans
+The chloride plan uses independent verified starting images for its first three shots, then the **actual final decoded frame** of the silver-chloride shot for ammonia addition. No shot asks for pouring, swirling and indicator testing together.
+
+For the optional litmus shot, the gas-producing preparation must already be complete. The fixture only evaluates the visible paper response. It remains a visual test and needs source and video review before instructional use.''')
+code('''def unique_input(name):
+    matches = list(Path("/kaggle/input").rglob(name))
+    if len(matches) != 1:
+        raise RuntimeError(f"Mount exactly one {name}; found {len(matches)}")
+    return matches[0]
+
+if EXPERIMENT == "litmus":
+    fixture = json.loads((pipeline / "knowledge" / "ammonia_litmus_observation.json").read_text())
+    INITIAL_IMAGE = unique_input("ammonia_litmus_ready.png")
+    fixture["clips"][0]["input_frame_path"] = str(INITIAL_IMAGE)
+    fixture["clips"][0]["duration_seconds"] = SETTINGS["seconds"]
+else:
+    DRY_IMAGE = unique_input("salt_analysis_one_test_tube_dry_salt.jpeg")
+    ACID_IMAGE = unique_input("salt_analysis_one_test_tube_acidified_solution.jpeg")
+    INITIAL_IMAGE = DRY_IMAGE
+    rag = ROOT / "Edu-video-gen-dataset"
+    if not (rag / "rag_index_matrix.npz").exists():
+        subprocess.run([sys.executable, "scripts/build_rag_index.py"], cwd=rag, check=True)
+    bundle_path = OUT / "rag_bundle.json"
+    subprocess.run([sys.executable, "scripts/build_rag_prompt_bundle.py", "Detect one cation and one anion in a salt", "--top-k", "1", "--output", str(bundle_path)], cwd=rag, check=True)
+    rag_record = json.loads(bundle_path.read_text())["retrieved_experiments"][0]
+    assert all(word in rag_record["title"].lower() for word in ("cation", "anion")), rag_record["title"]
+    print("Retrieved:", rag_record["title"], rag_record.get("retrieval_score"))
+    def shot(name, image, before, action, after, procedure, observation, chained=False):
+        result = {
+            "name": name, "input_frame_path": str(image) if image else None,
+            "scene": {"camera": "Locked close view; keep the existing test tube fixed"},
+            "state_before": before, "action": action, "state_after": after,
+            "duration_seconds": SETTINGS["seconds"], "continuity_required": chained,
+            "reference_mode": "chained" if chained else "independent", "needs_reference_image": not chained,
+            "reference_policy": "previous_state_keyframe" if chained else "state_keyframe",
+            "target_object": "the contents of the single existing test tube",
+            "preserve_objects": ["the existing test tube and holder", "the laboratory background"],
+            "quantity_constraint": "Exactly one test tube; only the named dropper may enter. Use documented amounts and preserve headspace.",
+            "observable_target": after,
+            "action_pacing": "One slow addition during the first part of the shot; allow the stated observation to develop, then hold still. No swirling or time lapse.",
+            "procedure_text": procedure, "observation_text": observation,
+            "prompt_bundle": {"stop_condition": after, "negative_prompt": "extra tube, duplicate vessel, fast motion, camera movement"},
+        }
+        if chained:
+            result.update(reference_clip="silver_nitrate_chloride_test", handoff_policy="final", handoff_entity="white silver chloride precipitate")
+        return result
+    fixture = {"name": "One-Tube Chloride Salt Analysis", "subject": "Qualitative salt analysis",
+        "educational_goal": "Observe chloride confirmation with silver nitrate and ammonia in a controlled one-tube visual sequence.",
+        "metadata": {"manual_review_required": True, "manual_review_reasons": ["Controlled visual fixture: confirm procedure details against the source manual before instructional use."]},
+        "rag_experiment": rag_record,
+        "conclusion_text": "The white silver chloride precipitate dissolves in ammonia, supporting the chloride identification.",
+        "clips": [
+            shot("prepare_unknown_salt", DRY_IMAGE, "One test tube contains white salt.",
+                "Slowly add distilled water from one dropper into the existing test tube; keep the tube stationary.",
+                "The salt dissolves in the water in that same tube, leaving a clear colourless solution.",
+                "Add distilled water to the salt.", "The salt dissolves to form a clear solution."),
+            shot("acidify_unknown_solution", ACID_IMAGE, "The existing test tube contains clear colourless salt solution.",
+                "Slowly add dilute nitric acid from one dropper into the existing tube.",
+                "The solution remains clear and colourless.", "Acidify the solution with dilute nitric acid.", "The solution remains clear and colourless."),
+            shot("silver_nitrate_chloride_test", ACID_IMAGE, "The existing tube contains clear colourless acidified salt solution.",
+                "Slowly add dilute silver nitrate from one dropper into the existing tube.",
+                "A white curdy precipitate forms and stays visible inside that same tube.",
+                "Add dilute silver nitrate to the acidified solution.", "A white curdy silver chloride precipitate forms."),
+            shot("ammonia_dissolves_chloride_ppt", None, "The same tube contains the white precipitate visible in the preceding shot.",
+                "Slowly add dilute ammonia from one dropper into the same tube.",
+                "The existing white precipitate dissolves, leaving a clear colourless solution in the same tube.",
+                "Add dilute ammonia to the silver chloride precipitate.", "The precipitate dissolves; the solution becomes clear.", chained=True),
+        ]}
+clips = fixture["clips"]
+experiment_slug = "one_tube_chloride_salt_analysis" if EXPERIMENT == "chloride" else "ammonia_litmus_observation"
+fixture_path = OUT / "experiment.json"
+fixture_path.write_text(json.dumps(fixture, indent=2))
+print("Generated frames per shot:", max(17, 4 * __import__("math").ceil((SETTINGS["seconds"] * 16 - 1) / 4) + 1))
+print("Shots:", [item["name"] for item in clips])''')
+code('''from PIL import Image, ImageDraw, ImageFont
+cards_dir = OUT / "cards"
+cards_dir.mkdir(exist_ok=True)
+font_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+font = ImageFont.truetype(str(font_path), 24) if font_path.exists() else ImageFont.load_default()
+def render_card(name, heading, body):
+    image = Image.new("RGB", (624, 624), "white")
+    draw = ImageDraw.Draw(image)
+    y = 40
+    for paragraph in [heading, "", body]:
+        line = ""
+        for word in paragraph.split():
+            candidate = (line + " " + word).strip()
+            if draw.textbbox((0, 0), candidate, font=font)[2] > 540:
+                draw.text((42, y), line, fill="black", font=font)
+                y += 34
+                line = word
+            else:
+                line = candidate
+        draw.text((42, y), line, fill="black", font=font)
+        y += 52
+    if y > 600:
+        raise RuntimeError("Card text exceeds the canvas; shorten it before generation")
+    path = cards_dir / f"{name}.png"
+    image.save(path)
+    return path
+title_card = render_card("00_title", fixture["name"], fixture["educational_goal"])
+procedure_cards, observation_cards = [], []
+for index, item in enumerate(clips, 1):
+    procedure_cards.append(render_card(f"{index:02d}_procedure", f"Step {index}: Procedure", item["procedure_text"]))
+    observation_cards.append(render_card(f"{index:02d}_observation", "Observation", item["observation_text"]))
+conclusion_card = render_card("99_conclusion", "Conclusion", fixture.get("conclusion_text", "Review the visible paper response against the documented observation."))
+from IPython.display import display
+display(Image.open(procedure_cards[0]))
+gc.collect()''')
+md('''## Generate and inspect
+The worker can reuse small disk-cached T5 contexts and retain one converted high-noise expert in bounded CPU memory. A cache miss or host-memory eviction still requires conversion. VAE output streaming targets decoded-frame memory. Check cache hits and total timings before claiming a speedup. Optional `EXPERT_SOURCE_DIR` reads mounted expert weights directly and avoids those repeated network transfers. Both filenames must match the original Comfy checkpoints.
+
+Inspect raw clips and the three handoff images below. Check vessel count, target of colour change, action order, and whether the final state actually exists before chaining.''')
+code('''command = [sys.executable, "main.py", "--knowledge-file", str(fixture_path),
+    "--initial-image", str(INITIAL_IMAGE), "--experiment-name", experiment_slug,
+    "--output-dir", str(OUT), "--generator-script", "kaggle_wan_wrapper.py",
+    "--generator-executable", sys.executable, "--generator-working-dir", str(pipeline),
+    "--wan-repo-dir", str(ROOT / "Wan2.2"), "--wan-model-preset", "i2v-a14b",
+    "--continuity-mode", "chain", "--wan-max-area", str(SETTINGS["area"]),
+    f"--generator-arg=--sampling-mode={SAMPLING_MODE}", f"--generator-arg=--base-steps={BASE_STEPS}", "--generator-arg=--gpu0-memory-gib=5",
+    "--generator-arg=--gpu1-memory-gib=11", "--wan-memory-telemetry",
+    "--science-mode", SCIENCE_MODE,
+    f"--generator-arg=--cpu-expert-cache-gib={CPU_EXPERT_CACHE_GIB}",
+    f"--generator-arg=--host-reserve-gib={HOST_RESERVE_GIB}",
+    f"--generator-arg=--quantization={QUANTIZATION}",
+    f"--generator-arg=--placement={PLACEMENT}",
+    f"--generator-arg=--prompt-cache-dir={ROOT / 'wan_prompt_cache'}"]
+if STREAM_EXPERT_TO_GPU:
+    command.append("--generator-arg=--stream-expert-to-gpu")
+if VAE_STREAM_TO_CPU:
+    command.append("--generator-arg=--vae-stream-to-cpu")
+if EXPERT_CACHE_DIR:
+    command.append(f"--generator-arg=--expert-cache-dir={EXPERT_CACHE_DIR}")
+for pattern in KEEP_FP16:
+    command.append(f"--generator-arg=--keep-fp16={pattern}")
+for area in SETTINGS["fallbacks"]:
+    command.extend(["--wan-fallback-area", str(area)])
+if EXPERT_SOURCE_DIR:
+    command.append(f"--generator-arg=--expert-source-dir={EXPERT_SOURCE_DIR}")
+if PROFILE_STAGES:
+    command.append("--generator-arg=--profile-stages")
+started = time.perf_counter()
+subprocess.run(command, cwd=pipeline, check=True)
+generation_wall_seconds = time.perf_counter() - started
+print(f"Pipeline wall time including worker startup: {generation_wall_seconds:.1f}s")''')
+code('''from IPython.display import Video
+from frame_extractor import FrameExtractor
+experiment_dir = OUT / experiment_slug
+video_paths = [experiment_dir / f"{item['name']}.mp4" for item in clips]
+for path in video_paths:
+    assert path.is_file() and path.stat().st_size > 0, path
+    display(Video(str(path), embed=True, width=480))
+    print(json.loads(path.with_suffix(".generation.json").read_text()))
+probe_source = video_paths[2] if len(video_paths) > 2 else video_paths[0]
+for mode in ("near_end", "final", "mid"):
+    image_path = OUT / f"review_handoff_{mode}.png"
+    FrameExtractor().extract_handoff_frame(probe_source, image_path, mode=mode)
+    print(mode, json.loads(Path(str(image_path) + ".json").read_text()))
+    display(Image.open(image_path))''')
+md('''## Compose at a readable speed
+This step uses the real output paths, orders each procedure / clip / observation explicitly, and normalizes every segment to the same dimensions, frame rate and encoding before concatenation. It prevents mixed-resolution fallback clips or cards from breaking playback. Slower presentation duplicates frames; it does not invent intermediate chemical states.''')
+code('''from imageio_ffmpeg import get_ffmpeg_exe
+from stitcher import stitch_clips
+segments = []
+def card_segment(png):
+    output = png.with_suffix(".mp4")
+    subprocess.run([get_ffmpeg_exe(), "-y", "-loop", "1", "-i", str(png), "-t", "3",
+        "-vf", "scale=624:624,setsar=1,fps=16", "-an", "-c:v", "libx264", "-preset", "fast",
+        "-crf", "18", "-pix_fmt", "yuv420p", str(output)], check=True, capture_output=True)
+    return output
+segments.append(card_segment(title_card))
+for index, raw_video in enumerate(video_paths):
+    presented = raw_video.with_name(raw_video.stem + "_presented.mp4")
+    filters = f"setpts=(PTS-STARTPTS)/{PLAYBACK_RATE},scale=624:624:force_original_aspect_ratio=decrease,pad=624:624:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=16"
+    subprocess.run([get_ffmpeg_exe(), "-y", "-i", str(raw_video), "-vf", filters, "-an",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p", str(presented)], check=True, capture_output=True)
+    segments.extend([card_segment(procedure_cards[index]), presented, card_segment(observation_cards[index])])
+segments.append(card_segment(conclusion_card))
+final = stitch_clips(segments, OUT / "science_educational_final.mp4")
+print("Final:", final)
+display(Video(str(final), embed=True, width=624))''')
+md('''## Benchmark this run without generating again
+This report counts actual generated seconds, not slower playback or cards. Scientific checks stay pending until reviewed in `scientific_review.json`. For controlled 2/3/4-second GPU comparisons, see `BENCHMARK.md`; longer profiles are experimental and the matrix disables area fallback so OOM limits remain visible.''')
+code('''subprocess.run([sys.executable, "benchmark.py", "collect", "--knowledge-file", str(fixture_path),
+    "--experiment-dir", str(experiment_dir), "--report-dir", str(OUT / "benchmark_report"),
+    "--pipeline-wall-seconds", str(generation_wall_seconds)], cwd=pipeline, check=True)
+print("Review:", OUT / "benchmark_report" / "scientific_review.json")''')
+md('## Scientific evidence and research evaluation\nEvery generated clip has a `science/review.json` and a clickable `science/review.html`. The default `observe` mode leaves scientific acceptance pending. Annotate actual target boxes and verify source requirements before using strict mode.\n\nThe next cell only prepares official VBench custom-input commands. It does not install evaluation models or spend GPU time. Run the prepared commands in a separate compatible evaluation environment after generation. Scientific percentages need independent reviews; VBench scores are not percentages realistic. See `SCIENCE_RESEARCH.md` and `RESEARCH_CHECKLIST.md` for causal pairs, challenge footage, blinded review, circuits and the student study.')
+code('subprocess.run([sys.executable, "research.py", "review", "--knowledge-file", str(fixture_path), "--run-dir", str(experiment_dir)], cwd=pipeline, check=True)\nsubprocess.run([sys.executable, "research_metrics.py", "--videos", *map(str, video_paths), "--output-dir", str(OUT / f"vbench_prepared_{time.time_ns()}")], cwd=pipeline, check=True)\nprint("Scientific evidence:", experiment_dir)\nprint("Research checklist:", pipeline / "RESEARCH_CHECKLIST.md")')
+nb = {"nbformat": 4, "nbformat_minor": 5, "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}, "language_info": {"name": "python", "version": "3.12"}}, "cells": cells}
+destination = OUTPUT / "Wan22_Kaggle_Science_Evidence_Optimized.ipynb"
+destination.write_text(json.dumps(nb, indent=1), encoding="utf-8")
+(PROJECTS / "image-to-video-pipeline" / destination.name).write_bytes(destination.read_bytes())
+for index, cell in enumerate(cells):
+    if cell["cell_type"] == "code":
+        compile(cell["source"], f"notebook_cell_{index}", "exec")
+print(f"Built {destination}; {len(cells)} cells; embedded source {len(bundle):,} bytes; all Python cells compile")

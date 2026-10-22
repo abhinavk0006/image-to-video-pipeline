@@ -56,6 +56,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gpu0-memory-gib", type=float)
     parser.add_argument("--gpu1-memory-gib", type=float)
     parser.add_argument("--expert-source-dir", type=Path)
+    parser.add_argument('--cpu-expert-cache-gib', type=float, default=14)
+    parser.add_argument('--host-reserve-gib', type=float, default=3)
+    parser.add_argument('--expert-cache-dir', type=Path)
+    parser.add_argument('--expert-cache-max-gib', type=float, default=32)
+    parser.add_argument('--prompt-cache-dir', type=Path)
+    parser.add_argument('--vae-stream-to-cpu', action='store_true')
+    parser.add_argument('--quantization', choices=['per_tensor', 'per_channel'], default='per_tensor')
+    parser.add_argument('--keep-fp16', action='append', default=[])
+    parser.add_argument('--placement', choices=['balanced', 'contiguous'], default='balanced')
+    parser.add_argument('--capture-linear-inputs', type=Path)
+    parser.add_argument('--capture-layer', action='append', default=[])
+    parser.add_argument('--capture-max-tokens', type=int, default=32)
+    parser.add_argument('--stream-expert-to-gpu', action='store_true')
+    parser.add_argument('--seed', type=int)
     parser.add_argument("--sampling-mode", choices=["lightning", "base"], default="lightning")
     parser.add_argument("--base-steps", type=int, default=20)
     parser.add_argument("--max-area", type=int)
@@ -96,6 +110,25 @@ def sampling_arguments(args) -> list[str]:
     return ["--steps", "4", "--lightning"]
 
 
+def optimization_arguments(args):
+    result = []
+    for name in ('cpu_expert_cache_gib', 'host_reserve_gib', 'expert_cache_dir',
+                 'expert_cache_max_gib', 'prompt_cache_dir', 'quantization', 'placement',
+                 'capture_linear_inputs', 'capture_max_tokens'):
+        value = getattr(args, name, None)
+        if value is not None:
+            result.extend(['--'+name.replace('_', '-'), str(value)])
+    if getattr(args, 'vae_stream_to_cpu', False):
+        result.append('--vae-stream-to-cpu')
+    if getattr(args, 'stream_expert_to_gpu', False):
+        result.append('--stream-expert-to-gpu')
+    for pattern in getattr(args, 'keep_fp16', []):
+        result.extend(['--keep-fp16', pattern])
+    for pattern in getattr(args, 'capture_layer', []):
+        result.extend(['--capture-layer', pattern])
+    return result
+
+
 def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
     repo = args.wan_repo_dir.resolve()
     runner = repo / "quantization" / "kaggle_generate_video.py"
@@ -117,6 +150,7 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
 
     seed_material = clip_name or str(output)
     seed = int.from_bytes(hashlib.sha256(seed_material.encode("utf-8")).digest()[:4], "big")
+    seed = int(task.get('seed', args.seed if getattr(args, 'seed', None) is not None else seed))
     command = [
         sys.executable, str(runner),
         "--image", str(image),
@@ -124,6 +158,7 @@ def run_clip(args: argparse.Namespace, task: dict[str, object]) -> None:
         "--negative-prompt", negative,
         "--frames", str(duration_to_frames(duration)),
         *sampling_arguments(args),
+        *optimization_arguments(args),
         "--max-memory-gib", str(args.max_memory_gib),
         "--seed", str(seed),
         "--output", str(output),
@@ -194,6 +229,7 @@ def build_wan_daemon_command(args: argparse.Namespace) -> list[str]:
     command = [
         sys.executable, str(runner), "--daemon",
         *sampling_arguments(args),
+        *optimization_arguments(args),
         "--max-memory-gib", str(args.max_memory_gib),
     ]
     if args.gpu0_memory_gib is not None:

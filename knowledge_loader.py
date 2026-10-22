@@ -102,7 +102,7 @@ def _parse_clip(clip_data: Mapping[str, Any], index: int) -> Clip:
         starts_new_sample=clip_data.get("starts_new_sample", False),
         liquid_state=_as_dict(clip_data.get("liquid_state", {})),
         tool_contact_policy=str(clip_data.get("tool_contact_policy", "auto")),
-        metadata=_as_dict(clip_data.get("metadata", {})),
+        metadata={**_as_dict(clip_data.get("metadata", {})), **{key: clip_data[key] for key in ("science_spec", "visibility_targets", "handoff_requirements", "render_mode", "circuit", "diagram_timeline", "quantities", "source_evidence", "sample_id", "reaction_scope") if key in clip_data}},
     )
 
 
