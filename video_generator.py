@@ -157,7 +157,7 @@ class LocalVideoGenerator:
 						daemon=True,
 					)
 					self._stderr_thread.start()
-					
+
 					# Read READY without blocking the pipeline forever. Wan initialization can
 					# legitimately take several minutes, so this is a heartbeat interval rather
 					# than a hard startup timeout.

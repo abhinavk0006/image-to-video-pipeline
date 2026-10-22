@@ -1,10 +1,6 @@
-"""Package the reviewed source changes into a self-contained Kaggle notebook."""
-import base64
-import hashlib
-import io
+"""Build a Kaggle notebook pinned to complete source repository snapshots."""
 import json
 from pathlib import Path
-import zipfile
 import subprocess
 import re
 
@@ -203,7 +199,7 @@ for item in clips:
     item["liquid_state"] = {**item.get("liquid_state", {}), **MATERIAL_OVERRIDES.get(item["name"], {})}
     item.setdefault("procedure_text", item.get("action", ""))
     item.setdefault("observation_text", item.get("state_after", ""))
-    print(item["name"], item["procedure_text"], item.get("metadata", {}).get("source_quantity_citation", ""), sep="\n")
+    print(item["name"], item["procedure_text"], item.get("metadata", {}).get("source_quantity_citation", ""), sep=" | ")
 plan = Experiment(name=fixture["name"], clips=[_parse_clip(item, index) for index, item in enumerate(clips)])
 prepare_state_tracks(plan)
 material_report = compile_material_plan(plan)
@@ -222,7 +218,8 @@ code('''from PIL import Image
 from science_cards import render_cards
 cards_dir = OUT / "cards"
 def cards(name, heading, body, kind):
-    return render_cards(cards_dir, name, heading, body, subject="chemistry", kind=kind,
+    subject = "physics" if "physics" in fixture.get("subject", "").lower() else "chemistry"
+    return render_cards(cards_dir, name, heading, body, subject=subject, kind=kind,
                         footer="One operation at a time • Observe the change")
 title_cards = cards("00_title", fixture["name"], fixture["educational_goal"], "title")
 procedure_cards, observation_cards = [], []
