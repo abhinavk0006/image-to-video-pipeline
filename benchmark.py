@@ -109,7 +109,16 @@ def collect_run(knowledge_file, experiment_dir, report_dir, *, wall_seconds=None
         for key in required:
             entry["checks"].setdefault(key, None)
         science = review_status({key: entry["checks"][key] for key in required})
+        material_status = None
+        if video.is_file() and video.with_suffix(".material-review.json").is_file():
+            from material_review import material_review_status
+            material_status, _ = material_review_status(video, resolved)
+            if material_status == "fail":
+                science = "failed"
+            elif material_status != "pass" and science != "failed":
+                science = "pending"
         row = {"clip": name, "reference_clip": dependency, "dependency_order_valid": dependency_valid,
+            "material_review_status": material_status,
             "reference_provenance": read_json(experiment_dir / name / "reference_provenance.json", {}),
             "expected_liquid_state": resolved.liquid_state,
             "technical_status": "failed", "scientific_status": science,

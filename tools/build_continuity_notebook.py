@@ -31,7 +31,7 @@ for dependency in ("Wan2.2", "Edu-video-gen-dataset"):
     if actual != BASES[dependency]:
         raise RuntimeError(f"{dependency} must be at pinned base {BASES[dependency]}, got {actual}")
 FILES = {
-    "image-to-video-pipeline": ["material_state.py", "science_cards.py", "models.py", "knowledge_loader.py", "CONTINUITY_AND_CARDS.md", "frame_extractor.py", "pipeline.py", "prompt_builder.py",
+    "image-to-video-pipeline": ["material_plan.py", "material_review.py", "main.py", "config.py", "MATERIAL_BUDGETS.md", "material_state.py", "science_cards.py", "models.py", "knowledge_loader.py", "CONTINUITY_AND_CARDS.md", "frame_extractor.py", "pipeline.py", "prompt_builder.py",
         "edu_video_rag_adapter.py", "video_generator.py", "stitcher.py", "kaggle_wan_wrapper.py",
         "test_frame_handoffs.py", "test_video_generator.py", "knowledge/ammonia_litmus_observation.json",
         "SCIENCE_QUALITY_NOTES.md", "PROJECT_HANDOFF.md", "BENCHMARK.md", "benchmark.py",
@@ -61,7 +61,7 @@ def code(source):
     # subprocess cwd only affects the child. Each notebook cell importing local
     # modules must establish the kernel's path itself, including on partial reruns.
     modules = sorted(set(re.findall(
-        r"^(?:from|import) (knowledge_loader|models|material_state|science_cards|frame_extractor|stitcher)\b",
+        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher)\b",
         source, re.MULTILINE)))
     if modules:
         bootstrap = '''import sys, importlib
@@ -102,6 +102,9 @@ SETTINGS = PROFILES[PROFILE]
 PLAYBACK_RATE = 0.5       # 33 frames at 16 FPS -> about 4.125 presented seconds; no extra generated frames
 EXPERT_SOURCE_DIR = None  # optional /kaggle/input/... folder with the two Comfy FP8 expert files
 PROFILE_STAGES = True     # synchronizes CUDA phase boundaries and saves timing/memory sidecars
+MATERIAL_PLAN_MODE = "strict"  # requires documented doses and a cumulative vessel budget before GPU work
+MATERIAL_REVIEW_MODE = "observe"  # "strict" pauses at each clip for hash-bound human review before chaining
+MATERIAL_OVERRIDES = {}   # clip name -> source-backed liquid_state fields; no guessed quantities
 assert EXPERIMENT in {"chloride", "litmus"} and 0 < PLAYBACK_RATE <= 1
 OUT = ROOT / f"wan_continuous_state_{EXPERIMENT}_{PROFILE}_{SAMPLING_MODE}"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -139,6 +142,23 @@ subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "
     "diffusers>=0.31,<0.33", "transformers>=4.49,<=4.51.3", "accelerate>=1.1.1", "easydict", "safetensors", "ftfy", "huggingface_hub", "imageio", "imageio-ffmpeg", "Pillow>=10.1", "matplotlib"], check=True)
 (OUT / "source_manifest.json").write_text(json.dumps(manifest, indent=2))
 print("Pinned bases plus verified embedded source update:", manifest["base_commits"])''')
+md('''## Source quantities and material preflight
+The current retrieved salt-analysis record does not specify reagent amounts or
+vessel capacity. The fixture also has no authoritative quantities. Supply them
+through `MATERIAL_OVERRIDES` in the configuration cell using the schema in
+`MATERIAL_BUDGETS.md`. Do not assume equal doses or a universal drop volume.
+
+The default `MATERIAL_PLAN_MODE="strict"` stops the generation cell before model
+startup if the dose/volume budget is unresolved. The plan and styled cards can
+still be inspected. `warn` permits an explicitly unvalidated visual trial; it
+does not make unknown quantities scientifically valid. Existing videos stay saved.
+
+`MATERIAL_REVIEW_MODE="strict"` additionally pauses before a liquid clip is accepted
+or chained until its `.material-review.json` contains independent source-linked,
+timestamped human review. `observe` records pending reviews and permits continuation;
+an explicitly failed review always stops propagation. No automatic chemistry
+verifier is supplied.
+''')
 md('''## Build atomic shot plans
 The chloride plan uses one starting image, then the **actual final decoded frame of the preceding generated shot** for every continuing operation. A named material-state track prevents static reference images from resetting the tube. These frames carry the generated state; they still need scientific review. Declare `starts_new_sample` with a separate image when a procedure intentionally changes aliquot. No shot asks for pouring, swirling and indicator testing together.
 
@@ -177,9 +197,9 @@ else:
             "reference_policy": "previous_state_keyframe" if chained else "state_keyframe",
             "target_object": "the contents of the single existing test tube",
             "preserve_objects": ["the existing test tube and holder", "the laboratory background"],
-            "quantity_constraint": "Exactly one test tube; only the named dropper may enter. Use documented amounts and preserve headspace.",
+            "quantity_constraint": "Use this step's documented dose, not an equal dose for every reagent. Preserve the starting liquid and headspace.",
             "observable_target": after,
-            "action_pacing": "One slow addition during the first part of the shot; allow the stated observation to develop, then hold still. No swirling or time lapse.",
+            "action_pacing": "Dispense only the specified dose, stop delivery, then show the documented endpoint throughout the contents. Use mixing only when the source calls for it; no time lapse.",
             "procedure_text": procedure, "observation_text": observation,
             "prompt_bundle": {"stop_condition": after, "negative_prompt": "extra tube, duplicate vessel, fast motion, camera movement"},
         }
@@ -210,17 +230,26 @@ else:
         ]}
 clips = fixture["clips"]
 if EXPERIMENT == "chloride":
-    clips[0]["liquid_state"].update(solid_change="The white salt dissolves and disappears; it does not remain as white suspended particles")
-    clips[0]["liquid_state"]["after_appearance"] = "transparent colourless solution, no white suspension or precipitate"
+    clips[0]["liquid_state"].update(solid_change="The original salt grains visibly shrink and disappear", after_clarity="clear", after_colour="colourless", after_solid="none", reaction_scope="whole_contents")
+    clips[0]["liquid_state"]["after_appearance"] = "optically transparent colourless liquid; the background is visible through the full column"
     clips[1]["liquid_state"]["after_appearance"] = "transparent colourless solution, no precipitate"
     clips[2]["liquid_state"]["after_appearance"] = "white curdy precipitate in the liquid, as documented"
-    clips[3]["liquid_state"].update(after_appearance="transparent colourless solution", solid_change="The existing precipitate dissolves and disappears")
+    clips[1]["liquid_state"].update(after_clarity="clear", after_colour="colourless")
+    clips[3]["liquid_state"].update(after_appearance="transparent colourless solution throughout", solid_change="The existing precipitate dissolves and disappears", after_clarity="clear", after_colour="colourless", after_solid="none", reaction_scope="whole_contents")
+for item in clips:
+    item["liquid_state"] = {**item.get("liquid_state", {}), **MATERIAL_OVERRIDES.get(item["name"], {})}
 # Resolve tracks in the saved plan as well, so benchmark dependencies are explicit.
 from knowledge_loader import _parse_clip
 from models import Experiment
 from material_state import prepare_state_tracks
+from material_plan import compile_material_plan
 plan = Experiment(name=fixture["name"], clips=[_parse_clip(item, index) for index, item in enumerate(clips)])
 prepare_state_tracks(plan)
+material_report = compile_material_plan(plan)
+(OUT / "material_plan.json").write_text(json.dumps(material_report, indent=2))
+print("Material plan:", material_report["status"])
+for row in material_report["clips"]:
+    print(row["clip"], "before/after mL:", row["expected_before_ml"], row["expected_after_ml"], "issues:", row["issues"])
 for item, resolved in zip(clips, plan.clips):
     item.update(reference_clip=resolved.reference_clip, reference_mode=resolved.reference_mode,
                 continuity_required=resolved.continuity_required, handoff_policy=resolved.handoff_policy)
@@ -249,6 +278,8 @@ The worker caches positive T5 contexts once. It remains persistent, but the stre
 
 Inspect raw clips and the three handoff images below. Check vessel count, target of colour change, action order, and whether the final state actually exists before chaining.''')
 code('''command = [sys.executable, "main.py", "--knowledge-file", str(fixture_path),
+    "--material-plan-mode", MATERIAL_PLAN_MODE,
+    "--material-review-mode", MATERIAL_REVIEW_MODE,
     "--initial-image", str(INITIAL_IMAGE), "--experiment-name", experiment_slug,
     "--output-dir", str(OUT), "--generator-script", "kaggle_wan_wrapper.py",
     "--generator-executable", sys.executable, "--generator-working-dir", str(pipeline),

@@ -14,6 +14,8 @@ import sys
 from frame_extractor import FrameExtractor
 from models import Clip, Experiment
 from material_state import prepare_state_tracks
+from material_plan import compile_material_plan
+from material_review import material_review_status
 from prompt_builder import PromptBuilder
 from stitcher import VideoStitcher
 from video_generator import LocalVideoGenerator, VideoGenerationRequest
@@ -110,8 +112,20 @@ class ExperimentPipeline:
 				raise PipelineError("Clip names must be unique")
 			try:
 				prepare_state_tracks(experiment)
+				material_plan = compile_material_plan(experiment)
 			except ValueError as exc:
+				Path(self.config.experiment_output_dir, "material_plan.json").write_text(json.dumps({"status": "invalid", "error": str(exc), "scientifically_verified": False}, indent=2), encoding="utf-8")
 				raise PipelineError(str(exc)) from exc
+			Path(self.config.experiment_output_dir, "material_plan.json").write_text(json.dumps(material_plan, indent=2), encoding="utf-8")
+			if self.config.material_plan_mode not in {"warn", "strict"}:
+				raise PipelineError("material_plan_mode must be warn or strict")
+			if self.config.material_review_mode not in {"observe", "strict"}:
+				raise PipelineError("material_review_mode must be observe or strict")
+			if material_plan["status"] == "needs_source_detail":
+				issues = "; ".join(f"{row['clip']}: {issue}" for row in material_plan["clips"] for issue in row["issues"])
+				if self.config.material_plan_mode == "strict":
+					raise PipelineError(f"Material plan needs source detail before generation: {issues}. See material_plan.json. No GPU generation was started.")
+				print(f"UNRESOLVED MATERIAL PLAN: {issues}")
 			if len({c.name for c in experiment.clips}) != len(experiment.clips):
 				raise PipelineError("Clip names must be unique after assigning default names")
 			prompt_bundles = {}
@@ -248,6 +262,11 @@ class ExperimentPipeline:
 						"reference_provenance": provenance,
 					}, indent=2), encoding="utf-8")
 
+				if "material_plan" in clip.metadata:
+					status, review_path = material_review_status(generated_video_path, clip)
+					print(f"Material review for {clip_name}: {status}; {review_path}")
+					if status == "fail" or (self.config.material_review_mode == "strict" and status != "pass"):
+						raise PipelineError(f"Material review {status} for '{clip_name}'. Inspect {review_path}; the clip is saved and will not be chained. Approved unchanged clips can be resumed without regeneration.")
 				clip.output_clip_path = str(generated_video_path)
 				generated_videos[clip_name] = (clip, generated_video_path)
 				clip_video_paths.append(generated_video_path)

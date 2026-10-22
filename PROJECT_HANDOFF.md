@@ -1,5 +1,17 @@
 # WAN22 Educational Chemistry Video Pipeline
 
+## 22 October 2026: dose budgets and reaction extent
+
+User feedback confirms the styled cards look good, while generated chemistry
+still has cloudy dissolution, oversized/equal-looking additions, within-clip
+level resets and partial-column clearing. Source audit found no structured dose/
+capacity fields in procedure steps; the salt record and fixture lack amounts.
+`MATERIAL_BUDGETS.md` documents cumulative planning, uncertainty, source-defined
+reaction scope and optional hash-bound human review. The revised notebook defaults
+to strict material preflight and needs real source quantities in MATERIAL_OVERRIDES.
+The dataset has not been filled with guessed quantities. Source amounts, further
+GPU trials and scientific acceptance remain outstanding.
+
 ## 19 October 2026: material continuity and card presentation
 
 Current entry point: `Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb` on

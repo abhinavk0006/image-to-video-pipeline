@@ -2,6 +2,13 @@
 
 ## Current persistent-worker notebook — 19 October 2026
 
+**22 October update:** liquid steps now have source-defined doses, cumulative
+capacity checks and whole-content reaction controls. The notebook defaults to
+strict quantity preflight because the current salt fixture has no authoritative
+amounts. Fill `MATERIAL_OVERRIDES` from the manual before generating. See
+[MATERIAL_BUDGETS.md](MATERIAL_BUDGETS.md), including the catalogue audit and optional
+hash-bound human review gate. Visual improvement remains unvalidated on GPU.
+
 Use [Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb](Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb)
 for the current iteration. It chains generated sample states and uses dark
 blue/purple 16:9 cards. See [CONTINUITY_AND_CARDS.md](CONTINUITY_AND_CARDS.md)

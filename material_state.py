@@ -57,7 +57,7 @@ def liquid_constraints(clip: Clip) -> list[str]:
     cap = state.get("max_fill_fraction")
     if cap is not None and not 0 < cap < 1:
         raise ValueError(f"{clip.name}: max_fill_fraction must be between zero and one")
-    if all(key in state for key in ("before_ml", "added_ml", "removed_ml", "after_ml")):
+    if state.get("volume_model", "additive_budget") == "additive_budget" and all(key in state for key in ("before_ml", "added_ml", "removed_ml", "after_ml")):
         expected = state["before_ml"] + state["added_ml"] - state["removed_ml"]
         if not math.isclose(expected, state["after_ml"], abs_tol=0.01):
             raise ValueError(f"{clip.name}: liquid volume balance is inconsistent")

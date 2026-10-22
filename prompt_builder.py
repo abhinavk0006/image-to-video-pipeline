@@ -12,6 +12,7 @@ import re
 
 from models import Clip, Experiment, PromptBundle, Scene
 from material_state import liquid_constraints, tool_constraint
+from material_plan import material_constraints
 
 
 def _clean_parts(parts: list[str]) -> list[str]:
@@ -83,12 +84,9 @@ class PromptBuilder:
 			f"Target object: {clip.target_object}" if clip.target_object else "",
 			f"Keep unchanged: {_join_phrases(clip.preserve_objects)}" if clip.preserve_objects else "",
 			f"Quantity limit: {clip.quantity_constraint or 'use documented amounts only; keep the liquid below the vessel rim'}",
-			f"Observable result: {clip.observable_target}" if clip.observable_target else "",
+			f"Observable result: {clip.observable_target}" if clip.observable_target and clip.observable_target != clip.state_after else "",
 			f"Pacing: {clip.action_pacing or 'one slow, deliberate action, then hold the result still; no time lapse'}",
-			"Only the tool named in this step may enter the frame; use the existing vessel throughout",
-			"Perform this action once. Show the documented result only on its named physical target",
-			f"Stop when: {motion.stop_condition}" if motion.stop_condition else "",
-			f"Additional constraints: {motion.constraints}" if motion.constraints else "",
+			"Perform the operation once on its named target; stop delivery before holding the result",
 			f"Camera: {clip.image_state.camera}" if clip.image_state.camera else "",
 			self.metadata.get("motion_style", ""),
 			self.motion_suffix,
@@ -104,15 +102,17 @@ class PromptBuilder:
 		# styling. CFG=1 Lightning ignores the negative prompt during denoising.
 		critical = [
 			f"Action: {clip.action}" if clip.action else action_text,
+			*material_constraints(clip),
 			f"Required result: {clip.state_after}" if clip.state_after else "",
-			tool_constraint(clip),
 			*liquid_constraints(clip),
+			tool_constraint(clip),
 		]
 		return _join_sentences([*critical, *grounding,
 			f"Starting state: {clip.state_before}" if clip.state_before else "",
 			motion.moving_object, motion.motion,
 			f"Direction: {motion.direction}" if motion.direction else "",
-			motion.constraints, motion.stop_condition])
+			motion.constraints,
+			motion.stop_condition if motion.stop_condition != clip.state_after else ""])
 
 	def build_prompt_bundle(self, experiment: Experiment, clip: Clip) -> PromptBundle:
 		"""Create a normalized prompt bundle for downstream modules."""

@@ -17,6 +17,8 @@ class PipelineConfig:
     default_image_extension: str = "png"
     default_video_extension: str = "mp4"
     continuity_mode: str = "independent"
+    material_plan_mode: str = "warn"
+    material_review_mode: str = "observe"
 
     @property
     def experiment_output_dir(self) -> str:

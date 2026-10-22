@@ -122,6 +122,10 @@ def _build_parser() -> argparse.ArgumentParser:
         default="independent",
         help="Use verified references independently, or feed each clip's final frame into the next clip.",
     )
+    parser.add_argument("--material-plan-mode", choices=["warn", "strict"], default="warn",
+                        help="Write the cumulative material budget; strict stops unresolved dose/capacity plans before GPU startup.")
+    parser.add_argument("--material-review-mode", choices=["observe", "strict"], default="observe",
+                        help="Strict requires timestamped human material review before accepting/chaining each liquid clip.")
     parser.add_argument(
         "--wan-max-area",
         type=int,
@@ -213,6 +217,8 @@ def main(argv: list[str] | None = None) -> int:
         input_dir=args.input_dir,
         experiment_name=experiment_name,
         continuity_mode=args.continuity_mode,
+        material_plan_mode=args.material_plan_mode,
+        material_review_mode=args.material_review_mode,
     )
 
     video_generator = LocalVideoGenerator(

@@ -89,9 +89,11 @@ def retrieve_pipeline_experiment(
         if scene.get("scene_id")
     }
     clips = []
+    steps_by_id = {str(step.get("step_id")): step for step in selected.get("procedure_steps", [])}
     for index, prompt in enumerate(prompt_inputs, start=1):
         scene = scene_by_id.get(prompt.get("scene_id"), {})
         step_id = str(prompt.get("step_id", index))
+        source_step = steps_by_id.get(step_id, {})
         clip_name = f"clip_{index}_{_slug(step_id)}"
         reference_image = str(prompt.get("starting_image", "")).strip()
         local_reference = Path(reference_image).expanduser() if reference_image else None
@@ -129,10 +131,10 @@ def retrieve_pipeline_experiment(
                 "quantity_constraint": prompt.get("quantity_constraint", ""),
                 "observable_target": prompt.get("observable_target", ""),
                 "action_pacing": prompt.get("action_pacing", "slow, single deliberate action"),
-                "state_track": prompt.get("state_track", scene.get("state_track", "")),
-                "starts_new_sample": prompt.get("starts_new_sample", False),
-                "liquid_state": prompt.get("liquid_state", {}),
-                "tool_contact_policy": prompt.get("tool_contact_policy", "auto"),
+                "state_track": prompt.get("state_track", source_step.get("state_track", scene.get("state_track", ""))),
+                "starts_new_sample": prompt.get("starts_new_sample", source_step.get("starts_new_sample", False)),
+                "liquid_state": prompt.get("liquid_state", source_step.get("liquid_state", {})),
+                "tool_contact_policy": prompt.get("tool_contact_policy", source_step.get("tool_contact_policy", "auto")),
                 "manual_review_required": bool(prompt.get("manual_review_required", False)),
                 "manual_review_reasons": prompt.get("manual_review_reasons", []),
                 "requires_clip_split": bool(prompt.get("requires_clip_split", False)),
