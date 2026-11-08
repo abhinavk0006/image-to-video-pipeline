@@ -32,7 +32,7 @@ def code(source):
     # subprocess cwd only affects the child. Each notebook cell importing local
     # modules must establish the kernel's path itself, including on partial reruns.
     modules = sorted(set(re.findall(
-        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities|run_preflight)\b",
+        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities|run_preflight|generation_benchmark)\b",
         source, re.MULTILINE)))
     if modules:
         bootstrap = '''import sys, importlib
@@ -266,9 +266,11 @@ if EXPERT_SOURCE_DIR:
     command.append(f"--generator-arg=--expert-source-dir={EXPERT_SOURCE_DIR}")
 if PROFILE_STAGES:
     command.append("--generator-arg=--profile-stages")
-started = time.perf_counter()
-subprocess.run(command, cwd=pipeline, check=True)
-generation_wall_seconds = time.perf_counter() - started
+from generation_benchmark import run_benchmarked
+experiment_dir = OUT / experiment_slug
+benchmark_directory, generation_wall_seconds = run_benchmarked(command,
+    knowledge_file=fixture_path, experiment_dir=experiment_dir,
+    report_root=OUT / "research_runs", cwd=pipeline)
 print(f"Pipeline wall time including worker startup: {generation_wall_seconds:.1f}s")''')
 md('''### Recover a preview import without regenerating
 Every cell importing project modules restores the notebook kernel's source path.

@@ -66,6 +66,10 @@ def main():
                 if isinstance(values, list) and values and isinstance(values[0], (float, int)):
                     scores.append({'file': str(path), 'raw_score': values[0]})
             report['dimensions'][dimension]['raw_scores'] = scores
+            if result.returncode == 0 and not scores:
+                report['status'] = 'failed'
+                write_json(root/'metric_run.json', report)
+                raise RuntimeError(f'VBench returned no parseable score for {dimension}; inspect raw outputs before reporting results')
             report['status'] = 'running'
             write_json(root/'metric_run.json', report)
             if result.returncode:

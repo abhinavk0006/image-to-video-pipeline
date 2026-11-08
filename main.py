@@ -249,10 +249,17 @@ def main(argv: list[str] | None = None) -> int:
     pipeline = ExperimentPipeline(config=config, video_generator=video_generator)
 
     try:
-        final_video_path = pipeline.run(
-            experiment,
-            initial_image_path=args.initial_image,
-        )
+        import os
+        if os.environ.get("WAN_BENCHMARK_MANAGED") == "1":
+            final_video_path = pipeline.run(experiment, initial_image_path=args.initial_image)
+        else:
+            from generation_benchmark import run_benchmarked
+            run_benchmarked([sys.executable, str(Path(__file__).resolve()), *(argv if argv is not None else sys.argv[1:])],
+                knowledge_file=knowledge_path, experiment_dir=config.experiment_output_dir,
+                report_root=Path(config.experiment_output_dir) / "research_runs",
+                cwd=Path(__file__).resolve().parent,
+                action=lambda: pipeline.run(experiment, initial_image_path=args.initial_image))
+            final_video_path = Path(config.stitched_video_file)
     except ManualImageRequiredError as error:
         print("Pipeline paused: manual image input is required.", file=sys.stderr)
         print(f"Clip: {error.clip_name}", file=sys.stderr)
