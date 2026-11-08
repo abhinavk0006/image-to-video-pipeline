@@ -56,7 +56,7 @@ Git snapshots. This notebook consumes the selected dataset protocol rather than 
 hard-coded four-shot demonstration. Source quantities, their roles and page citations
 reach the plan and cards. Unknown doses remain unknown.
 
-The default linked pilot includes its reference inside the dataset clone, so no separate image upload is required. Choose PILOT_ID in the configuration cell. All pilots remain drafts pending scientific review.
+The default linked pilot includes its reference inside the dataset clone, so no separate image upload is required. Choose PILOT_ID in the configuration cell; setup lists all available IDs. See the [image/pilot catalog](https://github.com/abhinavk0006/Edu-video-gen-dataset/blob/main/assets/reference_pilots/CATALOG.md) for reference images and trial order. All pilots remain drafts pending scientific review.
 
 The default chloride confirmation starts with a **prepared 1 mL test aliquot**
 (source step 1), then renders source steps 2–4. It does not include dissolving dry

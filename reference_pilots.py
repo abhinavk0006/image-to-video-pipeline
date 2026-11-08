@@ -14,6 +14,8 @@ def load_reference_pilot(dataset_root, pilot_id, *, duration_seconds=2.0):
     record=next(r for r in records if r['experiment_id']==pilot['experiment_id'])
     variant=next(v for v in record['protocol_variants'] if v['variant_id']==pilot['protocol_variant'])
     steps={s['step_id']:s for s in variant['procedure_steps']}
+    if set(pilot['source_step_hashes']) != {str(sid) for sid in steps}:
+        raise ValueError(f'{pilot_id}: source step set changed; review and rebind the pilot before generation')
     for sid,expected in pilot['source_step_hashes'].items():
         actual=hashlib.sha256(json.dumps(steps[int(sid)],sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         if actual!=expected:
