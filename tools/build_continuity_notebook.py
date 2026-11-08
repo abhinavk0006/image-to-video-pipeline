@@ -32,7 +32,7 @@ def code(source):
     # subprocess cwd only affects the child. Each notebook cell importing local
     # modules must establish the kernel's path itself, including on partial reruns.
     modules = sorted(set(re.findall(
-        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities|run_preflight|generation_benchmark)\b",
+        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities|run_preflight|generation_benchmark|reference_pilots)\b",
         source, re.MULTILINE)))
     if modules:
         bootstrap = '''import sys, importlib
@@ -56,9 +56,11 @@ Git snapshots. This notebook consumes the selected dataset protocol rather than 
 hard-coded four-shot demonstration. Source quantities, their roles and page citations
 reach the plan and cards. Unknown doses remain unknown.
 
+The default linked pilot includes its reference inside the dataset clone, so no separate image upload is required. Choose PILOT_ID in the configuration cell. All pilots remain drafts pending scientific review.
+
 The default chloride confirmation starts with a **prepared 1 mL test aliquot**
 (source step 1), then renders source steps 2–4. It does not include dissolving dry
-salt. Supply a matching starting image; the old dry-salt image is unsuitable here.
+salt. Its packaged image depicts that prepared aliquot; the old dry-salt image is unsuitable here.
 Other protocols require their own reviewed sample mapping and reference images.
 
 The default safe_2s profile retains 33 frames. Longer shots remain experimental.
@@ -68,6 +70,7 @@ code('''import base64, gc, hashlib, io, json, os, subprocess, sys, time, zipfile
 from pathlib import Path
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 ROOT = Path("/kaggle/working")
+PILOT_ID = "chloride_confirmation"  # alternatives: thiosulphate_cross, starch_heating_excerpt; None restores manual dataset flow
 EXPERIMENT = "chloride"  # "chloride", "dataset", or the separate "litmus" regression fixture
 DATASET_EXPERIMENT_ID = "chem_12_301"
 DATASET_PROTOCOL = "chloride_silver"
@@ -95,12 +98,12 @@ SETTINGS = PROFILES[PROFILE]
 PLAYBACK_RATE = 0.5       # 33 frames at 16 FPS -> about 4.125 presented seconds; no extra generated frames
 EXPERT_SOURCE_DIR = None  # optional /kaggle/input/... folder with the two Comfy FP8 expert files
 PROFILE_STAGES = True     # synchronizes CUDA phase boundaries and saves timing/memory sidecars
-MATERIAL_PLAN_MODE = "strict"  # requires documented doses and a cumulative vessel budget before GPU work
+MATERIAL_PLAN_MODE = "warn"  # draft visual pilots only; strict requires documented full dose/capacity budgets
 MATERIAL_REVIEW_MODE = "observe"  # "strict" pauses at each clip for hash-bound human review before chaining
 SCIENCE_MODE = "observe"  # save evidence/review scaffolds; pending reviews are never accuracy scores
 MATERIAL_OVERRIDES = {}   # clip name -> source-backed liquid_state fields; no guessed quantities
 assert EXPERIMENT in {"chloride", "dataset", "litmus"} and 0 < PLAYBACK_RATE <= 1
-OUT = ROOT / f"wan_continuous_state_{EXPERIMENT}_{PROFILE}_{SAMPLING_MODE}"
+OUT = ROOT / f"wan_continuous_state_{PILOT_ID or EXPERIMENT}_{PROFILE}_{SAMPLING_MODE}"
 OUT.mkdir(parents=True, exist_ok=True)
 print(SETTINGS, "playback rate:", PLAYBACK_RATE)''')
 code('''manifest = ''' + repr(manifest) + '''
@@ -129,7 +132,7 @@ AgNO3, NH4OH doses and vessel working capacity are unspecified. Supply missing f
 through `MATERIAL_OVERRIDES` in the configuration cell using the schema in
 `MATERIAL_BUDGETS.md`. Do not assume equal doses or a universal drop volume.
 
-The default `MATERIAL_PLAN_MODE="strict"` stops the generation cell before model
+`MATERIAL_PLAN_MODE="strict"` stops the generation cell before model
 startup if the dose/volume budget is unresolved. The plan and styled cards can
 still be inspected. `warn` permits an explicitly unvalidated visual trial; it
 does not make unknown quantities scientifically valid. Existing videos stay saved.
@@ -154,7 +157,15 @@ from models import Experiment
 from material_state import prepare_state_tracks
 from material_plan import compile_material_plan
 
-if EXPERIMENT == "litmus":
+if PILOT_ID:
+    from reference_pilots import load_reference_pilot
+    fixture = load_reference_pilot(ROOT / "Edu-video-gen-dataset", PILOT_ID, duration_seconds=SETTINGS["seconds"])
+    if INITIAL_IMAGE_PATH is None:
+        INITIAL_IMAGE_PATH = fixture["clips"][0]["input_frame_path"]
+    SAMPLE_TRACKS = {item["name"]: item["state_track"] for item in fixture["clips"]}
+    INITIAL_IMAGE = None
+    print("DRAFT VISUAL PILOT:", fixture["educational_goal"])
+elif EXPERIMENT == "litmus":
     fixture = json.loads((pipeline / "knowledge/ammonia_litmus_observation.json").read_text())
     INITIAL_IMAGE_NAME = "ammonia_litmus_ready.png"
     INITIAL_IMAGE = None
@@ -205,7 +216,7 @@ for row in material_report["clips"]:
 for item, resolved in zip(clips, plan.clips):
     item.update(reference_clip=resolved.reference_clip, reference_mode=resolved.reference_mode,
                 continuity_required=resolved.continuity_required, handoff_policy=resolved.handoff_policy)
-experiment_slug = "selected_source_protocol" if EXPERIMENT != "litmus" else "ammonia_litmus_observation"
+experiment_slug = PILOT_ID or ("selected_source_protocol" if EXPERIMENT != "litmus" else "ammonia_litmus_observation")
 fixture_path = OUT / "experiment.json"
 fixture_path.write_text(json.dumps(fixture, indent=2))
 print("Shots:", [item["name"] for item in clips])''')
@@ -237,6 +248,9 @@ for warning in preflight["warnings"]:
     print("REVIEW:", warning)
 if not preflight["ready"]:
     raise RuntimeError("Generation preflight failed: " + "; ".join(preflight["issues"]) + " See run_preflight.json.")
+expected_hash = fixture.get("metadata", {}).get("reference_pilot", {}).get("image_sha256")
+if expected_hash and preflight["image"]["sha256"] != expected_hash:
+    raise RuntimeError("Selected reference differs from the linked pilot asset; review/rebind it before generation.")
 INITIAL_IMAGE = Path(preflight["image"]["path"])
 fixture.setdefault("metadata", {})["initial_reference"] = preflight["image"]
 clips[0]["input_frame_path"] = str(INITIAL_IMAGE)
