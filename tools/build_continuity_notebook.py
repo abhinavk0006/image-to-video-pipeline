@@ -32,7 +32,7 @@ def code(source):
     # subprocess cwd only affects the child. Each notebook cell importing local
     # modules must establish the kernel's path itself, including on partial reruns.
     modules = sorted(set(re.findall(
-        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities)\b",
+        r"^(?:from|import) (knowledge_loader|models|material_state|material_plan|science_cards|frame_extractor|stitcher|edu_video_rag_adapter|source_quantities|run_preflight)\b",
         source, re.MULTILINE)))
     if modules:
         bootstrap = '''import sys, importlib
@@ -72,6 +72,7 @@ EXPERIMENT = "chloride"  # "chloride", "dataset", or the separate "litmus" regre
 DATASET_EXPERIMENT_ID = "chem_12_301"
 DATASET_PROTOCOL = "chloride_silver"
 PROTOCOL_START_STEP = 2  # chloride step 1 prepares the source's 1 mL aliquot
+INITIAL_IMAGE_PATH = None  # exact mounted/uploaded path; takes priority over name discovery
 INITIAL_IMAGE_NAME = "chloride_1ml_aliquot.png"  # must match the selected starting state
 REFERENCE_IMAGES = {}  # other clip names -> mounted image paths, for separate samples
 # Explicitly reviewed mapping for this same-aliquot chloride confirmation only.
@@ -153,12 +154,6 @@ from models import Experiment
 from material_state import prepare_state_tracks
 from material_plan import compile_material_plan
 
-def unique_input(name):
-    matches = list(Path("/kaggle/input").rglob(name))
-    if len(matches) != 1:
-        raise RuntimeError(f"Mount exactly one {name}; found {len(matches)}")
-    return matches[0]
-
 if EXPERIMENT == "litmus":
     fixture = json.loads((pipeline / "knowledge/ammonia_litmus_observation.json").read_text())
     INITIAL_IMAGE_NAME = "ammonia_litmus_ready.png"
@@ -234,7 +229,16 @@ md('''## Generate and inspect
 The worker caches positive T5 contexts once. It remains persistent, but the streamed experts still need loading and conversion. Optional `EXPERT_SOURCE_DIR` reads mounted expert weights directly and avoids those repeated network transfers. Both filenames must match the original Comfy checkpoints.
 
 Inspect raw clips and the three handoff images below. Check vessel count, target of colour change, action order, and whether the final state actually exists before chaining.''')
-code('''INITIAL_IMAGE = unique_input(INITIAL_IMAGE_NAME)
+code('''from run_preflight import build_preflight
+preflight = build_preflight(image_name=INITIAL_IMAGE_NAME, image_path=INITIAL_IMAGE_PATH,
+    material_report=material_report, material_mode=MATERIAL_PLAN_MODE)
+(OUT / "run_preflight.json").write_text(json.dumps(preflight, indent=2))
+for warning in preflight["warnings"]:
+    print("REVIEW:", warning)
+if not preflight["ready"]:
+    raise RuntimeError("Generation preflight failed: " + "; ".join(preflight["issues"]) + " See run_preflight.json.")
+INITIAL_IMAGE = Path(preflight["image"]["path"])
+fixture.setdefault("metadata", {})["initial_reference"] = preflight["image"]
 clips[0]["input_frame_path"] = str(INITIAL_IMAGE)
 fixture_path.write_text(json.dumps(fixture, indent=2))
 command = [sys.executable, "main.py", "--knowledge-file", str(fixture_path),

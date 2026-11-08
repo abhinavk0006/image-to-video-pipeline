@@ -1,3 +1,11 @@
+# Current entry point — 8 November 2026
+
+Use `Wan22_Kaggle_Continuous_State_Styled_Cards.ipynb` on
+`feature/persistent-wan-worker`. Read `PROJECT_REVIEW_2026_11_08.md` for the
+fresh GitHub review, confirmed results, unresolved issues and next comparisons.
+The sections below are historical notes; older notebook/branch recommendations
+are superseded. Scientific quality and optimized GPU runtime remain unconfirmed.
+
 ## Experimental research and optimization branch — 19 October 2026
 
 The branch `codex/science-evidence-and-runtime-cache` adds scientific evidence

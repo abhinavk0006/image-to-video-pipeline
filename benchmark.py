@@ -47,8 +47,8 @@ def file_sha256(path):
 
 
 def probe_video(path):
-    import imageio_ffmpeg
-    reader = imageio_ffmpeg.read_frames(str(path), pix_fmt="rgb24")
+    from video_decode import read_rgb_frames
+    reader = read_rgb_frames(path)
     try:
         meta = next(reader)
         count = sum(1 for _ in reader)
