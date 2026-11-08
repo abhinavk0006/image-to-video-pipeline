@@ -124,7 +124,9 @@ sys.path.insert(0, str(pipeline))
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "Edu-video-gen-dataset" / "requirements.txt"),
     "diffusers>=0.31,<0.33", "transformers>=4.49,<=4.51.3", "accelerate>=1.1.1", "easydict", "safetensors", "ftfy", "huggingface_hub", "imageio", "imageio-ffmpeg", "Pillow>=10.1", "matplotlib"], check=True)
 (OUT / "source_manifest.json").write_text(json.dumps(manifest, indent=2))
-print("Complete pinned source snapshots:", manifest["base_commits"])''')
+print("Complete pinned source snapshots:", manifest["base_commits"])
+registry = json.loads((ROOT / "Edu-video-gen-dataset/assets/reference_pilots/manifest.json").read_text())
+print("Available PILOT_ID values:", list(registry["pilots"]))''')
 md('''## Source quantities and material preflight
 The selected source records distinguish aliquots, reagent doses, stocks, capacities,
 conditions and endpoints. For chloride the initial aliquot is 1 mL, but acid,
