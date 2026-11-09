@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "design_cycles": 5,
+  "runtime_retry_limit_changed": false,
+  "iterations": [
+    {
+      "iteration": 1,
+      "name": "Compile experiments before rendering",
+      "weakness": "Prompt text flattens quantities, entities, separate samples, time and observations.",
+      "hypothesis": "A typed protocol compiler prevents contradictory shots before spending GPU time.",
+      "adds": [
+        "source-resolved protocol intermediate representation",
+        "persistent apparatus and sample IDs",
+        "explicit contact and event dependencies",
+        "source quantity intervals and unknowns",
+        "separate process time, generated time and presented time"
+      ],
+      "alternatives": [
+        "Prompt expansion alone: cheap but does not enforce invariants.",
+        "Train a new science model immediately: costly and unsupported by the current reviewed data."
+      ],
+      "failure_probe": "Try compiling repeated aliquots, stock preparations and missing doses; reject accidental dose multiplication and conflated samples.",
+      "test": "Compare same source plans with and without compilation; count invalid plans and independently reviewed procedural errors.",
+      "success_unlocks": "A dependency graph can drive reusable references and grounded handoffs.",
+      "remaining_weakness": "A correct requested state still does not prove the video achieved it.",
+      "status": "design_review_completed_not_gpu_validated",
+      "depends_on_iteration": null
+    },
+    {
+      "iteration": 2,
+      "name": "Make continuity evidence-dependent",
+      "weakness": "Final-frame similarity does not establish action completion, identity or volume continuity.",
+      "hypothesis": "An uncertainty-aware state ledger prevents unsupported scientific state from propagating.",
+      "adds": [
+        "desired, observed and accepted state kept separate",
+        "entity-scoped predicates with evidence intervals",
+        "three-valued pass/fail/unknown state",
+        "hash-bound source/reference/video/reviewer lineage",
+        "consumer-specific handoff preconditions"
+      ],
+      "alternatives": [
+        "Use the last frame unconditionally: cheap but can propagate a failed action.",
+        "Trust a VLM numeric score: not calibrated for these chemistry claims."
+      ],
+      "failure_probe": "A plausible final frame hides a missing pour; a blurred meniscus is unknown rather than proof of volume.",
+      "test": "Compare final-frame chaining with evidence-qualified chaining at matched compute; measure transition precision, false acceptance and full-sequence success.",
+      "success_unlocks": "Explicit uncertainty identifies which next observation or repair would actually help.",
+      "remaining_weakness": "Reviewing every predicate on every frame can dominate total cost.",
+      "status": "design_review_completed_not_gpu_validated",
+      "depends_on_iteration": 1
+    },
+    {
+      "iteration": 3,
+      "name": "Choose evidence and rendering before expensive generation",
+      "weakness": "Correctness checks may be too costly or impossible in an unreadable camera view.",
+      "hypothesis": "Cheap visibility and motion previews can eliminate unjudgeable shots and route exact content to deterministic renderers.",
+      "adds": [
+        "image-hash-bound target regions and occlusion status",
+        "projected visibility checks at actual output and fallback resolution",
+        "lightweight candidate motion/contact previews",
+        "renderer capabilities for photoreal footage, calibrated overlays and labelled diagrams",
+        "human review escalation for unsupported semantic checks"
+      ],
+      "alternatives": [
+        "Increase resolution everywhere: memory cost without guaranteed observability.",
+        "Automatically replace failed footage with diagrams: changes the task and can contaminate comparisons."
+      ],
+      "failure_probe": "A rim hides paper contact, a low-area fallback makes a drop invisible, or an explanatory animation is mistaken for a real observation.",
+      "test": "Visibility-only and preview-only ablations; compare time lost to rejected shots, judgeability and annotation labour.",
+      "success_unlocks": "Renderer and visibility requirements become constraints for a measured compute scheduler.",
+      "remaining_weakness": "A good preview does not guarantee that the unconstrained Wan output follows its trajectory.",
+      "status": "design_review_completed_not_gpu_validated",
+      "depends_on_iteration": 2
+    },
+    {
+      "iteration": 4,
+      "name": "Spend compute on accepted scientific progress",
+      "weakness": "Uniform clips, unmeasured optimizations and repeated expert loading waste limited memory and wall time.",
+      "hypothesis": "A conservative scheduler can choose among measured feasible profiles and repair only scientifically affected descendants.",
+      "adds": [
+        "hardware/model/version-specific profile registry",
+        "uncertainty and visibility constrained profile selection",
+        "per-sample sequential execution with optional scheduling across independent jobs",
+        "failure-type-specific repair and descendant invalidation",
+        "all-attempt compute ledger and cold/warm/resume distinction",
+        "separate model-adapter experiments for longer native generation"
+      ],
+      "alternatives": [
+        "Batch all dependent clips by expert: violates decoded-state dependencies.",
+        "Always lower resolution and upscale: may erase a decisive scientific detail.",
+        "Enable every cache/kernel/offload option at once: attribution and feasibility become unclear."
+      ],
+      "failure_probe": "A warm cache profile is used for a cold session, an OOM fallback hides a target, or a cheaper profile increases rerenders.",
+      "test": "Matched wall-time and matched-attempt comparisons against the fixed safe_2s baseline; record VRAM, host RAM, disk, cache hits and all repair cost.",
+      "success_unlocks": "A measured quality/cost frontier can support active selection of the next experiment.",
+      "remaining_weakness": "The policy can exploit an incomplete verifier or improve easy clips while failing unseen families.",
+      "status": "design_review_completed_not_gpu_validated",
+      "depends_on_iteration": 3
+    },
+    {
+      "iteration": 5,
+      "name": "Make the system challenge itself and learn what to test next",
+      "weakness": "Generator and verifier can share misconceptions; apparent gains may reflect cherry-picking or leaked templates.",
+      "hypothesis": "Independent adversarial/causal evaluation plus family-held-out tests reveals real scientific progress and guides subsequent development.",
+      "adds": [
+        "expert-labelled wrong-order, missing-action, wrong-target and duplicate-apparatus challenges",
+        "source-validated causal pairs with no prompt/reference contradictions",
+        "blinded external review and reviewer calibration",
+        "family-level holdouts, paired seeds and complete attempt manifests",
+        "separate photoreal and hybrid evaluation tracks",
+        "active experiment selection by expected information gain per total cost",
+        "later misconception and retention study"
+      ],
+      "alternatives": [
+        "Publish one aggregate realism percentage: hides procedural failure.",
+        "Let one model generate and grade its own answers: shared failure modes.",
+        "Treat every pilot ID as an independent experiment: pseudoreplication from reused sources and images."
+      ],
+      "failure_probe": "A verifier accepts a beautiful incorrect clip, a causal pair changes several conditions, or a policy overfits the evaluation set.",
+      "test": "Freeze evaluation families and scoring before policy tuning; report false acceptance, coverage, sequence success and costs with uncertainty.",
+      "success_unlocks": "A reusable source/evidence dataset, calibrated decision policy and curriculum-aware generation research programme.",
+      "remaining_weakness": "Expert disagreement, limited sources, renderer domain shift and scarce GPU evidence remain; further claims depend on actual experiments.",
+      "status": "design_review_completed_not_gpu_validated",
+      "depends_on_iteration": 4
+    }
+  ]
+}
