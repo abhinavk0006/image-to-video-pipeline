@@ -1,0 +1,2971 @@
+{
+  "status": "draft_coverage_not_validated_mapping",
+  "source_steps": [
+    {
+      "experiment_id": "chem_12_205",
+      "protocol": "oxalic_0p1m",
+      "step_id": 1,
+      "source_step_sha256": "b37978539e27ed29775ea5156cc7e2278e81f93f9ff5d5994529c7c8f1b5263a",
+      "candidate_motions": [
+        "pour",
+        "burette_delivery"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_205",
+      "protocol": "oxalic_0p1m",
+      "step_id": 2,
+      "source_step_sha256": "48c918a1df8428e4bb1d8ff0e4eec7f20531c6a06be64f5e5941a039163d8c0d",
+      "candidate_motions": [
+        "dropper",
+        "pipette_aspiration"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_205",
+      "protocol": "oxalic_0p1m",
+      "step_id": 3,
+      "source_step_sha256": "7277fb4634a1d7ad1f72c0f73025c2de86118c9eed87c8864ea3338f5d19d20b",
+      "candidate_motions": [
+        "swirl_flask",
+        "sample_withdrawal",
+        "burette_delivery",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_206",
+      "protocol": "mohr_0p05m",
+      "step_id": 1,
+      "source_step_sha256": "35edc27ccf64dd2c84972abf3cc75b1f5293f687bc4032508523794f34c06da0",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "solid_transfer",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_206",
+      "protocol": "mohr_0p05m",
+      "step_id": 2,
+      "source_step_sha256": "ac9d87a05d39b3de42ef0ba9482eaf7d4204a28fe84e20cf2f6157ab76ba80e5",
+      "candidate_motions": [
+        "dropper",
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_206",
+      "protocol": "mohr_0p05m",
+      "step_id": 3,
+      "source_step_sha256": "6b8fa4bc61f2ba087a8ec6a195627b5d24b52b946feaaae723a9defc496e38a3",
+      "candidate_motions": [
+        "swirl_flask",
+        "sample_withdrawal",
+        "thermometer_position",
+        "burette_delivery",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "original_solution",
+      "step_id": 1,
+      "source_step_sha256": "ef3944c515605b723a957517260a5ee354c8e5ee8862665572e1f38895a4912c",
+      "candidate_motions": [
+        "pour",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "carbonate_extract",
+      "step_id": 1,
+      "source_step_sha256": "492e854dbece7aac6fb1c4ed5ff2b3e3c819f287cc1461ba996981a882e7964c",
+      "candidate_motions": [
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "chloride_silver",
+      "step_id": 1,
+      "source_step_sha256": "49feffbd5d9ee779f160b31fd0eb606c9f415e9b56a0b4f14a969548e1224ff3",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "chloride_silver",
+      "step_id": 2,
+      "source_step_sha256": "199c1bb455319dbc2bd2d0f2d15e2bdbda93de558e3e1aa80b514fb9039dbb6e",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "chloride_silver",
+      "step_id": 3,
+      "source_step_sha256": "47327158a2e2f1176f938cb4ac4923a4f01fc98bb288d52283926f665f3d9779",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "chloride_silver",
+      "step_id": 4,
+      "source_step_sha256": "aeb079e3ee3e3fb7e4415706bc101a9bbc26177ad4a56513d8b01eab891429d6",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "carbonate",
+      "step_id": 1,
+      "source_step_sha256": "cc4ad28291f280a80e55bae13db075fac114583ad25aef14e87f2c5a14947b59",
+      "candidate_motions": [
+        "gas_test_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "sulphide",
+      "step_id": 1,
+      "source_step_sha256": "f33b1aef4083dac9dde18a5bce2920ccbf1dfa89a3ef808b0225282efbfbfae8",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "sulphite",
+      "step_id": 1,
+      "source_step_sha256": "c22b272a2140bbb4e523bd3fb1a3e678906610dc0a18378f9d9b89216f657184",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "nitrite_iodide",
+      "step_id": 1,
+      "source_step_sha256": "39a2a64e00b89d01131583b5ff534855b52994c05d023841402f27f26a5ef356",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "nitrite_azo",
+      "step_id": 1,
+      "source_step_sha256": "1dcf984a3da176e44aab3e121753df7896061c206a7ac0fb40a64c338518e10e",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "acetate_ferric",
+      "step_id": 1,
+      "source_step_sha256": "4d23c22a80b2fc95eb0d06491dd0be10ea608086b6b224916da4cb9d1d2a0147",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking",
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "acetate_ester",
+      "step_id": 1,
+      "source_step_sha256": "58fced7d87be904fa2191d4c40c476211eb1ab3526c3e104005ad5862fd40a73",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "bromide_layer",
+      "step_id": 1,
+      "source_step_sha256": "ba9f111776aca1c0519af5195630c0be0810a2dfe95d85c9ebd585d2e690ad4d",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "iodide_layer",
+      "step_id": 1,
+      "source_step_sha256": "e85225f03921472fd2cd42c1038217d7ec2219da7ab1e11b63d8a880008126bb",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "nitrate_ring",
+      "step_id": 1,
+      "source_step_sha256": "14d5f898c34b259cbdeb9fd13a906d40327d7a9bbd13df58f00ca0f69824b0da",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "oxalate",
+      "step_id": 1,
+      "source_step_sha256": "1c9725451910f71b9309c0d983af0f7e3064dbe54622a07ec44c8edc859ecc99",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "sulphate",
+      "step_id": 1,
+      "source_step_sha256": "320e9fbf833d878a277426b18d6782e7cc7016b8a1e0d6a237bf1832c9bb5304",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "phosphate",
+      "step_id": 1,
+      "source_step_sha256": "4da5eac5ac5936f8c6be7822d34221339b3f512783746e0b1584a90087766434",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "ammonium",
+      "step_id": 1,
+      "source_step_sha256": "7f0e0417512c40860cb61ab0af1d5a88c7e3e3e898d0d4566c8cc657a341f526",
+      "candidate_motions": [
+        "gas_test_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "dry_heating",
+      "step_id": 1,
+      "source_step_sha256": "5966657bcf39028ac8d2b712d3ed5c8915cc8ad7cd618e2be7ae11d670f83e1d",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "flame",
+      "step_id": 1,
+      "source_step_sha256": "d3774d58cc5d2892156f7e0fdcf11a99eff2a812abda4956429357ce29e2597a",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "charcoal",
+      "step_id": 1,
+      "source_step_sha256": "f94078594d5c07452e890e4e7d18b0d2e047cd38442796ac566a82b072344d96",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cobalt_nitrate",
+      "step_id": 1,
+      "source_step_sha256": "71271b76dfdf664d0c1eb6629e5a0e83c0fba6d3a3a5be17a53f9eda8a169871",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "bromide_silver",
+      "step_id": 1,
+      "source_step_sha256": "2a96c11f7109988237828e2002f270fe2b184708006f2f7a7f27a1bea8380f54",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "iodide_silver",
+      "step_id": 1,
+      "source_step_sha256": "59fa2a78ae083cc67573d7b4bc5d735bb31885b9e846a3488a801495ea47ad3d",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_lead",
+      "step_id": 1,
+      "source_step_sha256": "9c543fd91368558d0f944fd3ab652d02ca62abaf8fec3400d78fc02b8476d2a9",
+      "candidate_motions": [
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_copper",
+      "step_id": 1,
+      "source_step_sha256": "8a0dad349ce9885807311c5f54071403a6bd236c10640497636f25d79a119a96",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_arsenic",
+      "step_id": 1,
+      "source_step_sha256": "2dcf407fb0921cd2936d73825e4d31f768d4debff38087e2304fc3c8dc7ef854",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_iron",
+      "step_id": 1,
+      "source_step_sha256": "65b040266afbdeb8b27953afd1a0f51009e09206a04d139d899ff9854fd1778f",
+      "candidate_motions": [
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_aluminium",
+      "step_id": 1,
+      "source_step_sha256": "cd91779cbeef4ac4f7f91a4e4cdf2f582483d04e19fce4f8f6d3b027b7fbcc9a",
+      "candidate_motions": [
+        "paper_contact",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_zinc",
+      "step_id": 1,
+      "source_step_sha256": "4383b0a64d845e9bc18e01c6b054ac60723697e08a655714da86f21bfb4fa3ae",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_manganese",
+      "step_id": 1,
+      "source_step_sha256": "a4f427a4bd800cb155bd5b560685fc8284c07a45302c5e07a2a2254612468c2b",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_nickel",
+      "step_id": 1,
+      "source_step_sha256": "6fac48b097086b03f88fd8ae9cd689031aec83a0c9ea5693174cb299a1a42584",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_cobalt",
+      "step_id": 1,
+      "source_step_sha256": "73dcc7c45875824550dcb938d97649c91c7633e32a6d1aceecf153edb884fc85",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_barium",
+      "step_id": 1,
+      "source_step_sha256": "b8edbef9f5bddf064d7360cac7a6dfccad2b6876629937d8e338dbc9e806a946",
+      "candidate_motions": [
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_strontium",
+      "step_id": 1,
+      "source_step_sha256": "fdd0f79303d5c56b7794ab27ab1272f60a80bc366813adbb423d1d8365083c22",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_calcium",
+      "step_id": 1,
+      "source_step_sha256": "dc0f917c15d31edcf211a6efd1c506c73e21cc5a99d7d7c4fdbf37a02bececd9",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_301",
+      "protocol": "cation_magnesium",
+      "step_id": 1,
+      "source_step_sha256": "4e5150b596b896d0a2d6f1c809f03bc108a41ee21a33e4e9fc3ed1b2a0c5eac8",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "bromine",
+      "step_id": 1,
+      "source_step_sha256": "039588b4c9e62b04886bb9a708a937872d0910e43320a371675c87c5ee05effa",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "baeyer",
+      "step_id": 1,
+      "source_step_sha256": "4a7a269a06590cbe5d0c06972fd0ebbdfe1fd624658bae663c01c02bf47a58cf",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "ceric",
+      "step_id": 1,
+      "source_step_sha256": "9f576ad6ed657136580f08dd5e697ec66f38c0cbd2abeb15e3e7aea8378f25bb",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "iodoform_hypochlorite",
+      "step_id": 1,
+      "source_step_sha256": "44beb5b143cfd19d544ee3ed125a8b6ded962cd110312e3809b832600af41f6d",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "iodoform_iodine",
+      "step_id": 1,
+      "source_step_sha256": "a12be2d64a6459ed62872ad8ed78a5cb57f0c9c613f60d81cf604fc93342def9",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "lucas",
+      "step_id": 1,
+      "source_step_sha256": "ffe67eac31a02016d5159a75937f330708401a1bc9d7aceee76d9eac288b7bde",
+      "candidate_motions": [
+        "tube_shaking"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "phenol_ferric",
+      "step_id": 1,
+      "source_step_sha256": "0ae33c9174754cea7057761563fae57c935a7f63168b37918823c02f414ab3b4",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "phthalein",
+      "step_id": 1,
+      "source_step_sha256": "8780e826bb9e689a3d8798792ee9ec42527aa3665d90643212ebe401a98a3aa4",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "dnp",
+      "step_id": 1,
+      "source_step_sha256": "f5156fd989ab6074607cf29b4d5e7b4796fadf3498d68948ab8de76b4b7704b6",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "schiff",
+      "step_id": 1,
+      "source_step_sha256": "fc2208a535f328587dc330c7b0591d2b5f3afeb876276b02c281a29a846d7a92",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "fehling",
+      "step_id": 1,
+      "source_step_sha256": "c56c4c1a6c9dfd6d62d9f53f054c73f226d33b173bc3e08f3d26b005b0ad5fad",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "benedict",
+      "step_id": 1,
+      "source_step_sha256": "e7765d5004b3c8f116f3ea1cea576bd930156fd213c9f4967c085202db4d68bf",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "tollens",
+      "step_id": 1,
+      "source_step_sha256": "4a4fd4c588651a81f8d7b73e61670405afa71702c2d60e3b49bc2b24de2dda8f",
+      "candidate_motions": [
+        "dropper",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "carboxyl_litmus",
+      "step_id": 1,
+      "source_step_sha256": "5bc848b7aa3514378ae86717d3e42646606f5f0ecfc6fd0e0f4b470e23777566",
+      "candidate_motions": [
+        "paper_contact"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "bicarbonate",
+      "step_id": 1,
+      "source_step_sha256": "a6275670464956185fe23df836622ef7af955bb65c77cda9aca3a0859f911662",
+      "candidate_motions": [
+        "dropper",
+        "solid_transfer"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "ester",
+      "step_id": 1,
+      "source_step_sha256": "8686bb35f79f621fb6be7768fee35ffa1e14939864840d8b68ab42fe84c91baf",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "amine_solubility",
+      "step_id": 1,
+      "source_step_sha256": "ce05714eb6deafea2fa2e1b10a525a86ee2a403a84eed53f68fce1c9df0ddcd5",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "carbylamine",
+      "step_id": 1,
+      "source_step_sha256": "579d487b25ce80e3266cac321a4df902c2b4a0f8157360655a737338f9d007fe",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_402",
+      "protocol": "amine_azo",
+      "step_id": 1,
+      "source_step_sha256": "173c41baa500b401936e1874c492e669107150a31c485081da13aa58af73f07c",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "milk_aliquot",
+      "step_id": 1,
+      "source_step_sha256": "4e5ad5a41060029c0a9c16451cbe1899aac83bf2f6e945eb840a4d214507564c",
+      "candidate_motions": [
+        "paper_contact"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "powder_extract",
+      "step_id": 1,
+      "source_step_sha256": "57b786695fa5e75210eb695868f778d6977782b2ba5bd711c2eb1ddefa90cd0f",
+      "candidate_motions": [
+        "solid_transfer",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "molisch",
+      "step_id": 1,
+      "source_step_sha256": "d858cf73a4ef9e6fb8bc73d33c88987f147ff09f72aa8b2c5aa7841c552977f5",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "fehling",
+      "step_id": 1,
+      "source_step_sha256": "6bcae8bd37bd4679b2a81a401add3dbbe0933841c6fb2294ffea960f6f578cc2",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "benedict",
+      "step_id": 1,
+      "source_step_sha256": "c5cf1de836be48bc4e053db3962f859270d5175b0753571ff185ad254016fc10",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "tollens",
+      "step_id": 1,
+      "source_step_sha256": "532641ddd39f54efc44119f2ae6f3af30a00c6bc848c3cb928482e459c9880a5",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "barfoed",
+      "step_id": 1,
+      "source_step_sha256": "3ebc27015e1ea4253cf642ba746d0bd6df55a9b2cc80231f0889be7decc1871e",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "sucrose_hydrolysis",
+      "step_id": 1,
+      "source_step_sha256": "7cf8e654891eedc3674747ce7f54360e59e5ecf8c6638e9d2aec063c33258eb8",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "seliwanoff",
+      "step_id": 1,
+      "source_step_sha256": "9dc72051aeb57b9ad2eefad84aa0828919c35304e86ad45b5989b2f5415c2d14",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "starch_iodine",
+      "step_id": 1,
+      "source_step_sha256": "8c0353056c21b75db7adc3128bce4280bec5cc76e16c0cd950250db494935022",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "fat_acrolein",
+      "step_id": 1,
+      "source_step_sha256": "f3d20ad56a64cb1087990fcc42473209015b6920edc65aa21c0b3541ee5b673f",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "biuret",
+      "step_id": 1,
+      "source_step_sha256": "5ae54fc5aa1b25903ed113affaefea975ee02e9383d7b258cd170be9653366d4",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "ninhydrin",
+      "step_id": 1,
+      "source_step_sha256": "3342f5ea82815bdd76d6b6806fe1a5eec58c9ff12dd9394fffbfddf9238f71b5",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_403",
+      "protocol": "xanthoproteic",
+      "step_id": 1,
+      "source_step_sha256": "bb42b433ec3957aa54adfbec5837bdedc4873577b340758cc260bc2788282c2f",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "chloroform",
+      "step_id": 1,
+      "source_step_sha256": "d44befa29472b7be9ad55e6582c70d35c5d6978aa9ad6960f93378cb6057875e",
+      "candidate_motions": [
+        "filter_washing"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "chloroform",
+      "step_id": 2,
+      "source_step_sha256": "f5c5dd122f25bf08ca4c63ae0ae6c16abe6f967c19eefe3f879d4e00a6918328",
+      "candidate_motions": [
+        "paper_contact",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "chloroform",
+      "step_id": 3,
+      "source_step_sha256": "ae68fe918331ac5582e5f09e4a1a0f292181d8f644e1c369009defebedd240a6",
+      "candidate_motions": [
+        "paper_dipping",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "acetone",
+      "step_id": 1,
+      "source_step_sha256": "d44befa29472b7be9ad55e6582c70d35c5d6978aa9ad6960f93378cb6057875e",
+      "candidate_motions": [
+        "filter_washing"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "acetone",
+      "step_id": 2,
+      "source_step_sha256": "f5c5dd122f25bf08ca4c63ae0ae6c16abe6f967c19eefe3f879d4e00a6918328",
+      "candidate_motions": [
+        "paper_contact",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_501",
+      "protocol": "acetone",
+      "step_id": 3,
+      "source_step_sha256": "1ec510bad6cb0d8130c927d1795439c1d11619bba747258186a21ea24e9143fd",
+      "candidate_motions": [
+        "paper_dipping",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_502",
+      "protocol": "metal_ions",
+      "step_id": 1,
+      "source_step_sha256": "c3265cf92e6e8ce0dee244d2f5cfacaa33f6ba372337fdae43fbfd15dbea993f",
+      "candidate_motions": [
+        "paper_contact"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_502",
+      "protocol": "metal_ions",
+      "step_id": 2,
+      "source_step_sha256": "8aa77d2a4bc63948e57cde04eaa1bd6482d7ddc1b2dd75df26bf163c1b6d5d07",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_502",
+      "protocol": "metal_ions",
+      "step_id": 3,
+      "source_step_sha256": "0cc5cd701034b44a60108a43a317d00d50d60c0b3802f33b35a8b5717f157563",
+      "candidate_motions": [
+        "paper_contact",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "potash_alum",
+      "step_id": 1,
+      "source_step_sha256": "b2ff3fa45e65491d005d2d7f61ed73a1995c0dd59612050bebfd8dedd1d4d0c6",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "potash_alum",
+      "step_id": 2,
+      "source_step_sha256": "09d0c43acbfed607a656f6c1e88cbdd783c11422bdb8c017046d874adf4d774e",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "potash_alum",
+      "step_id": 3,
+      "source_step_sha256": "5f64f9e74c6d613b257bf2d44eddd1a8be6bdcce2e1a3c5dc1facbc02f0acebb",
+      "candidate_motions": [
+        "solid_transfer",
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "mohr_crystals",
+      "step_id": 1,
+      "source_step_sha256": "db3969c8004aad1bc44a2150b171f5fa35b30f8e5b1405b34947cf872713c483",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "mohr_crystals",
+      "step_id": 2,
+      "source_step_sha256": "31fed093eadc7ba8546f5868aea730a70490e884ba0507fbd7aa614ff86f17e5",
+      "candidate_motions": [
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_601",
+      "protocol": "mohr_crystals",
+      "step_id": 3,
+      "source_step_sha256": "cd2889de362c1c7b9e349e9efc04d6b59660c5c7f8018baa0169e827817dc924",
+      "candidate_motions": [
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_602",
+      "protocol": "ferrioxalate",
+      "step_id": 1,
+      "source_step_sha256": "3a3bd2b79c1ed713ac6f59ed01842a2e14f09244ab4c28dbe4ad91a6f2f5ccb8",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_602",
+      "protocol": "ferrioxalate",
+      "step_id": 2,
+      "source_step_sha256": "09e05b041e8dfc328e78281bf0b8e66337cd8f45cc830564e4a78e0a11beb77d",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_602",
+      "protocol": "ferrioxalate",
+      "step_id": 3,
+      "source_step_sha256": "1fe0adfaa712513612f36791561efb46c0dc4be55536d737f909ac6e83f8daf8",
+      "candidate_motions": [
+        "solid_transfer",
+        "filter_washing",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "anhydride",
+      "step_id": 1,
+      "source_step_sha256": "74ea79cf5c9f9ab020ee16dca501dbab7fac19807853f3fb3492b6fc0d2162c5",
+      "candidate_motions": [
+        "dropper",
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "anhydride",
+      "step_id": 2,
+      "source_step_sha256": "db11040449fb4b2ff65d5bf2b2e17f3ac39ae95e90ed333198b240883c17a995",
+      "candidate_motions": [
+        "dropper",
+        "bath_lowering",
+        "stopper_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "anhydride",
+      "step_id": 3,
+      "source_step_sha256": "e3fd871051b456408ab5043aabfdb86be9c59212f3a880b11ea538eecc152f3f",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "acetyl_chloride_pyridine",
+      "step_id": 1,
+      "source_step_sha256": "705a8537793e51472c81bdd53d5489dd0e4b37aad03359a866881771d5bca125",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "acetyl_chloride_pyridine",
+      "step_id": 2,
+      "source_step_sha256": "0d8427d47db8c7050c1320a4577e54f9391262dc49a6b3694ed193ec8a2176ef",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "acetyl_chloride_pyridine",
+      "step_id": 3,
+      "source_step_sha256": "2642f65b97c95a379549456ce52e69ed94af7c7a8e68539d5f48261351fb1c3c",
+      "candidate_motions": [
+        "pour",
+        "filter_washing"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "small_scale_alternative",
+      "step_id": 1,
+      "source_step_sha256": "e359acf4f9a29afb684638eb13d88600e41c459776e095dbd48ebad814dacc37",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "small_scale_alternative",
+      "step_id": 2,
+      "source_step_sha256": "1afb63c2ed41bf7c7b6de7c04f3fc7bdc6faafaa6da8f252108c9c4421ea45d4",
+      "candidate_motions": [
+        "dropper",
+        "sample_withdrawal",
+        "bath_lowering",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_603",
+      "protocol": "small_scale_alternative",
+      "step_id": 3,
+      "source_step_sha256": "0dc6a4d977954fc6dda3e1b1e9cb4a5c5727d6e0a809a64f14112a59753cca15",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "filter_washing"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_604",
+      "protocol": "dibenzalacetone",
+      "step_id": 1,
+      "source_step_sha256": "cc66d7dc409ee9f9fc8486601417a0c6ddd5f935ac96e466e42cd82075bd878a",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_604",
+      "protocol": "dibenzalacetone",
+      "step_id": 2,
+      "source_step_sha256": "cf020e18c49bab04abdaab9619857bd1b081e8948c8fc3118ce22243602f1c4a",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_604",
+      "protocol": "dibenzalacetone",
+      "step_id": 3,
+      "source_step_sha256": "e8705eaed00438dcf7c8946ca86e8fbe8ab1ee625770b9f9d47930d68dfedfed",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "filter_washing",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_605",
+      "protocol": "nitration",
+      "step_id": 1,
+      "source_step_sha256": "9fb7423783462dd53a166498a16468c344db59a0c6a87b860e5be44735510fcc",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_605",
+      "protocol": "nitration",
+      "step_id": 2,
+      "source_step_sha256": "68f1462853d80d9ef933002b05dce65fd941bd689343ec32b68b43b7e5d9a621",
+      "candidate_motions": [
+        "dropper",
+        "stir"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_605",
+      "protocol": "nitration",
+      "step_id": 3,
+      "source_step_sha256": "c871e108c574db4b4256a49e16af33b74eac10471a17b314189702497b1e4c59",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "filter_washing",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_606",
+      "protocol": "azo_coupling",
+      "step_id": 1,
+      "source_step_sha256": "e68fd07da3ae5076b0bc01b563bb0cf87c08f8fa4e3be729f4420ff03c967c8d",
+      "candidate_motions": [
+        "pour",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_606",
+      "protocol": "azo_coupling",
+      "step_id": 2,
+      "source_step_sha256": "593b9e438ac320629218ec7724fd7249df161bcc9039ef9a2ba5f459c4be5705",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_606",
+      "protocol": "azo_coupling",
+      "step_id": 3,
+      "source_step_sha256": "390b568a7f9486c3cb126d0ae67072246a76e324e694a6f112a6655c11256222",
+      "candidate_motions": [
+        "dropper",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_606",
+      "protocol": "azo_coupling",
+      "step_id": 4,
+      "source_step_sha256": "cc62a7b4235437e17f4c93d2124d3ce78745734dfc98d8701798dcabfd301b3d",
+      "candidate_motions": [
+        "dropper",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "starch",
+      "step_id": 1,
+      "source_step_sha256": "42f02a2fea57b5356fdf2474ad5de9f41661b60c3e48f530529d124610d29b98",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "starch",
+      "step_id": 2,
+      "source_step_sha256": "8af0528da6df817e9764bfd9c2bec3cd1a2a92659cf0d00b98533d46d9e39c86",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "starch",
+      "step_id": 3,
+      "source_step_sha256": "e61c66d43940099d672ceb7e72f984a9c87f1308a2512b4268d922cc9a1da621",
+      "candidate_motions": [
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "gum",
+      "step_id": 1,
+      "source_step_sha256": "42f02a2fea57b5356fdf2474ad5de9f41661b60c3e48f530529d124610d29b98",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "gum",
+      "step_id": 2,
+      "source_step_sha256": "ba43d461da2998d1ac911962ea1333e6b9fa1509e2506aa679d7a7d8cfd344b6",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "gum",
+      "step_id": 3,
+      "source_step_sha256": "e61c66d43940099d672ceb7e72f984a9c87f1308a2512b4268d922cc9a1da621",
+      "candidate_motions": [
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "albumin",
+      "step_id": 1,
+      "source_step_sha256": "810c6673cec2ad0c14db406ae809ce308fb64aeb8b9596d6710dad74a995e3bb",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "albumin",
+      "step_id": 2,
+      "source_step_sha256": "584693b3adb364d8a26e64b3f9e21d03ba4b7c52c446e609608fc9527606e1ca",
+      "candidate_motions": [
+        "stir"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "ferric_chloride",
+      "step_id": 1,
+      "source_step_sha256": "2fdf80663ed4938c05f4b7ff00bd27db363177eeac36bb508541bbabe56657c2",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "ferric_chloride",
+      "step_id": 2,
+      "source_step_sha256": "9d820862746eb209cea1cb35d733ee47a4bfadc8f3aa2340e3328d17ca38fdc3",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "ferric_chloride",
+      "step_id": 3,
+      "source_step_sha256": "fa8e8e585d5b996bfb115d4ea970e555708f49aa2f3fa703f0c0f46672ac2b60",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "aluminium_chloride",
+      "step_id": 1,
+      "source_step_sha256": "9980a936c7737a5d6408a2630cac664bcb8e3113b30935a4f95e3de006e3dadd",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "aluminium_chloride",
+      "step_id": 2,
+      "source_step_sha256": "9d820862746eb209cea1cb35d733ee47a4bfadc8f3aa2340e3328d17ca38fdc3",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "aluminium_chloride",
+      "step_id": 3,
+      "source_step_sha256": "e691daa98fe4feb50749f78f2565a5aee66c795822bc9d7f4a12e9defe5048ae",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "stir",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "arsenious_sulphide",
+      "step_id": 1,
+      "source_step_sha256": "5f8c9b614edcadb5a7a5d8a5661190873546fee91b4989beb8351071c619b7c6",
+      "candidate_motions": [
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_801",
+      "protocol": "arsenious_sulphide",
+      "step_id": 2,
+      "source_step_sha256": "7019a16a205956d70f4cc3e9052cc2808df376f1b3b3678fffc53bf24269f69a",
+      "candidate_motions": [
+        "gas_test_position",
+        "filter_washing",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_802",
+      "protocol": "dialysis",
+      "step_id": 1,
+      "source_step_sha256": "2f580efba318c1583c2e7dce4f9411338fbee4e429e45e7d0993645081ac9dfd",
+      "candidate_motions": [
+        "membrane_suspension"
+      ],
+      "requires_new_template": true,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_802",
+      "protocol": "dialysis",
+      "step_id": 2,
+      "source_step_sha256": "f66964f9a0a99a36794e64974a12ddbc7ef68834fd5419fd077d27a561cc1b36",
+      "candidate_motions": [
+        "membrane_suspension",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_802",
+      "protocol": "dialysis",
+      "step_id": 3,
+      "source_step_sha256": "8c51666825ed7b42ef30632368642a703db882da29669316c3ae2e1bdb06273b",
+      "candidate_motions": [
+        "sample_withdrawal"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_803",
+      "protocol": "oil_comparison",
+      "step_id": 1,
+      "source_step_sha256": "6185949a754ea7bb89c50c8e0fbd7b32ab0559117c0316bc447e1c34d9302174",
+      "candidate_motions": [
+        "pour",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_803",
+      "protocol": "oil_comparison",
+      "step_id": 2,
+      "source_step_sha256": "3ffae5540484059474e06ae107e50ba3fa3d07903aac519ad5a63071af6e1408",
+      "candidate_motions": [
+        "dropper"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_803",
+      "protocol": "oil_comparison",
+      "step_id": 3,
+      "source_step_sha256": "2f699eba8e6144bfa9a7d3081ca32bbcbffceeaf82da8af4bdf0946dfc727751",
+      "candidate_motions": [
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_803",
+      "protocol": "oil_comparison",
+      "step_id": 4,
+      "source_step_sha256": "aeb2b9683510a573089aab5bcddb6f69dae6dd104397480df5a29e62ff58ba7a",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "tube_shaking",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_1ml",
+      "step_id": 1,
+      "source_step_sha256": "4e0d7fae062ddfdf6015ae4b0325df44e8e1c92f49a71a061e6ea2525bcff448",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal",
+        "thermometer_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_1ml",
+      "step_id": 2,
+      "source_step_sha256": "786eb6cc0cc36d4dc04874f4a876158137a3201799970161ed1dd6d673316b81",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_1ml",
+      "step_id": 3,
+      "source_step_sha256": "bf041d81788b6be8279faa7293c6dcb95efb5263ba6d98134a7f91ca9e0bc2f1",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_2ml",
+      "step_id": 1,
+      "source_step_sha256": "4e0d7fae062ddfdf6015ae4b0325df44e8e1c92f49a71a061e6ea2525bcff448",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal",
+        "thermometer_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_2ml",
+      "step_id": 2,
+      "source_step_sha256": "4b364fdabd7858529697479f9930c99b15da17271d8e0e1bcd24fb297cad34db",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_2ml",
+      "step_id": 3,
+      "source_step_sha256": "bf041d81788b6be8279faa7293c6dcb95efb5263ba6d98134a7f91ca9e0bc2f1",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_4ml",
+      "step_id": 1,
+      "source_step_sha256": "4e0d7fae062ddfdf6015ae4b0325df44e8e1c92f49a71a061e6ea2525bcff448",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal",
+        "thermometer_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_4ml",
+      "step_id": 2,
+      "source_step_sha256": "16c9718e99d7c389881d8c4ad173319d5697e22d2ec819a0fbf158af861f8c45",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_4ml",
+      "step_id": 3,
+      "source_step_sha256": "bf041d81788b6be8279faa7293c6dcb95efb5263ba6d98134a7f91ca9e0bc2f1",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_8ml",
+      "step_id": 1,
+      "source_step_sha256": "4e0d7fae062ddfdf6015ae4b0325df44e8e1c92f49a71a061e6ea2525bcff448",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal",
+        "thermometer_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_8ml",
+      "step_id": 2,
+      "source_step_sha256": "f50130ef0f86c6e0b9ba2cd9afa61672cf7826fa454f77f348bcd087f2d53cc9",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_8ml",
+      "step_id": 3,
+      "source_step_sha256": "bf041d81788b6be8279faa7293c6dcb95efb5263ba6d98134a7f91ca9e0bc2f1",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_16ml",
+      "step_id": 1,
+      "source_step_sha256": "4e0d7fae062ddfdf6015ae4b0325df44e8e1c92f49a71a061e6ea2525bcff448",
+      "candidate_motions": [
+        "pour",
+        "sample_withdrawal",
+        "thermometer_position"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_16ml",
+      "step_id": 2,
+      "source_step_sha256": "199bf8164a36b9e40b2bc6a83d78fb2e684fb83d753376caac34712f2c9e0b95",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_901",
+      "protocol": "hcl_16ml",
+      "step_id": 3,
+      "source_step_sha256": "bf041d81788b6be8279faa7293c6dcb95efb5263ba6d98134a7f91ca9e0bc2f1",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_30c",
+      "step_id": 1,
+      "source_step_sha256": "8dfa6136bd6dfc6c53ec8d6e1fba786ca2b22147e35de314d1f2ba565e6f20bb",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_30c",
+      "step_id": 2,
+      "source_step_sha256": "e642def18d1bad3723b931d5b2f2b9964fcfcb211304eed3e79512bbda272140",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_30c",
+      "step_id": 3,
+      "source_step_sha256": "ba318ba7ff676cc3ad4a502cd020953541ff740fd01bc447cb31c5869987de94",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_40c",
+      "step_id": 1,
+      "source_step_sha256": "6f4ea24f33a2a691ac35e4db6d647159d6c20176e15fcfde0b7a3d0ab94c1974",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_40c",
+      "step_id": 2,
+      "source_step_sha256": "e642def18d1bad3723b931d5b2f2b9964fcfcb211304eed3e79512bbda272140",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_40c",
+      "step_id": 3,
+      "source_step_sha256": "ba318ba7ff676cc3ad4a502cd020953541ff740fd01bc447cb31c5869987de94",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_50c",
+      "step_id": 1,
+      "source_step_sha256": "96ecc4ba29ba0c66b58207ceb8fa51c05040fcb98f070831e70959bd5fe9c658",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_50c",
+      "step_id": 2,
+      "source_step_sha256": "e642def18d1bad3723b931d5b2f2b9964fcfcb211304eed3e79512bbda272140",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_50c",
+      "step_id": 3,
+      "source_step_sha256": "ba318ba7ff676cc3ad4a502cd020953541ff740fd01bc447cb31c5869987de94",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_60c",
+      "step_id": 1,
+      "source_step_sha256": "9b51c671f008d689c016499faa1991b00d618929ae74262be070fb8fda808f4f",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_60c",
+      "step_id": 2,
+      "source_step_sha256": "e642def18d1bad3723b931d5b2f2b9964fcfcb211304eed3e79512bbda272140",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_60c",
+      "step_id": 3,
+      "source_step_sha256": "ba318ba7ff676cc3ad4a502cd020953541ff740fd01bc447cb31c5869987de94",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_70c",
+      "step_id": 1,
+      "source_step_sha256": "363d0238a36d7fcdb6a5d00080f508d2b16cfa0f536c9ee51ecaf05a68c2bdb5",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_70c",
+      "step_id": 2,
+      "source_step_sha256": "e642def18d1bad3723b931d5b2f2b9964fcfcb211304eed3e79512bbda272140",
+      "candidate_motions": [
+        "dropper",
+        "pour",
+        "swirl_flask"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_902",
+      "protocol": "temperature_70c",
+      "step_id": 3,
+      "source_step_sha256": "ba318ba7ff676cc3ad4a502cd020953541ff740fd01bc447cb31c5869987de94",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_b",
+      "step_id": 1,
+      "source_step_sha256": "e2a4cd3cc9720ff73c4b3bfcd6e124625edb24e165e997715e2acc5f90f3ea14",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_b",
+      "step_id": 2,
+      "source_step_sha256": "9617b5c7346a92eaf3bc42f0630e60ac74ace84ebb7e8f4793cce30fd5381c28",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_b",
+      "step_id": 3,
+      "source_step_sha256": "359be1950ff8a81b5370d5bd9b99e4a6b299a04430318fb2f5a6d29af995bc56",
+      "candidate_motions": [
+        "pour",
+        "stir"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_c",
+      "step_id": 1,
+      "source_step_sha256": "e2a4cd3cc9720ff73c4b3bfcd6e124625edb24e165e997715e2acc5f90f3ea14",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_c",
+      "step_id": 2,
+      "source_step_sha256": "867ea900cc3a7d1be5b92805156da26f7b8deb9e02e436078057c198a789eacc",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_c",
+      "step_id": 3,
+      "source_step_sha256": "245cc6ed46eb86486c6e0d9383cc718cf9ff6d5f646238017a34a9154575ea44",
+      "candidate_motions": [
+        "pour",
+        "stir"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_d",
+      "step_id": 1,
+      "source_step_sha256": "e2a4cd3cc9720ff73c4b3bfcd6e124625edb24e165e997715e2acc5f90f3ea14",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_d",
+      "step_id": 2,
+      "source_step_sha256": "214e3f1106c723dd7d15f565a64a8ac198a06917b1c34ccf911b10c4aa493754",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_903",
+      "protocol": "mixture_d",
+      "step_id": 3,
+      "source_step_sha256": "6dcee9df7b298d0f49c2cba0ebd2d8272cbc196e6f80cea3fa9f0bb980486104",
+      "candidate_motions": [
+        "pour",
+        "stir"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_b",
+      "step_id": 1,
+      "source_step_sha256": "9135ae543e0ff69823b005618318e7ef2254747c6525c7c8e59a945d5dc5569c",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_b",
+      "step_id": 2,
+      "source_step_sha256": "b780440764b1de0a0738523db2c09d4d35389ea41571cb2764bf9a02d7fcd37a",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_b",
+      "step_id": 3,
+      "source_step_sha256": "2f56b32dfebc641deedd8e19ad4c17fe6473d15ac92f448bfde8a6c957532288",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_c",
+      "step_id": 1,
+      "source_step_sha256": "9135ae543e0ff69823b005618318e7ef2254747c6525c7c8e59a945d5dc5569c",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_c",
+      "step_id": 2,
+      "source_step_sha256": "3d41f5fdaa374b95d8dceb6161bc43ff4393ddb58fe44363ed970b256645b1f6",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_c",
+      "step_id": 3,
+      "source_step_sha256": "78688cd9296765e193dcdc07adaa935ea06929c37d60ed1a18b8ce2ecf7dedad",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_d",
+      "step_id": 1,
+      "source_step_sha256": "9135ae543e0ff69823b005618318e7ef2254747c6525c7c8e59a945d5dc5569c",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_d",
+      "step_id": 2,
+      "source_step_sha256": "30d0ee51d69820429e3cf098edd5d7107096a15d8f97a11305e75f04aae36f17",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_d",
+      "step_id": 3,
+      "source_step_sha256": "a1044d239f466b7378603d5bf8b3e35019488f54f11bcdbd8f59d1a09ff1aec5",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_e",
+      "step_id": 1,
+      "source_step_sha256": "9135ae543e0ff69823b005618318e7ef2254747c6525c7c8e59a945d5dc5569c",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_e",
+      "step_id": 2,
+      "source_step_sha256": "0142199f86023bf3b5c5cf528bfe017f074159ab02c812cfa3302dbd6c63277a",
+      "candidate_motions": [
+        "pour"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_904",
+      "protocol": "mixture_e",
+      "step_id": 3,
+      "source_step_sha256": "d88f9e019376345365cb4164299504218a70a5e3095522efdabf57ed84c0f092",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "sample_withdrawal",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1001",
+      "protocol": "potassium_nitrate",
+      "step_id": 1,
+      "source_step_sha256": "788498eea1dbdfb8f8a187b4658ee2395ca46b97d72faf1386a58a24a17d0669",
+      "candidate_motions": [
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1001",
+      "protocol": "potassium_nitrate",
+      "step_id": 2,
+      "source_step_sha256": "13b9e51a3cb9648f5031aaea2447b60f2342bd6ce7ed7f8680d18f44c734d005",
+      "candidate_motions": [
+        "pour",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1001",
+      "protocol": "potassium_nitrate",
+      "step_id": 3,
+      "source_step_sha256": "2ec8fd7909f00aadd943bc143df440f33518a73339b5b99663661112320d3da6",
+      "candidate_motions": [
+        "dropper",
+        "stir",
+        "solid_transfer",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1002",
+      "protocol": "neutralisation",
+      "step_id": 1,
+      "source_step_sha256": "66d11253d9bffd8bdb9b4ba4170677035321777e05be25499f1fdfc6d768c0bf",
+      "candidate_motions": [
+        "pour",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1002",
+      "protocol": "neutralisation",
+      "step_id": 2,
+      "source_step_sha256": "e03bc6468a7e5e726ebfd574348af87ff679a3f891b6cd4c2c45365466b9215a",
+      "candidate_motions": [
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1002",
+      "protocol": "neutralisation",
+      "step_id": 3,
+      "source_step_sha256": "dee4b54f3ec6f1433f6f75d3c253768d7b2d19564935e6c9dc8e6038a82904b5",
+      "candidate_motions": [
+        "pour",
+        "stir",
+        "thermometer_position",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p2m_copper",
+      "step_id": 1,
+      "source_step_sha256": "a4a71d525884361595006c3e3dbf311c005c3a0138bf899c89c51b7d728d8986",
+      "candidate_motions": [
+        "electrode_placement"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p2m_copper",
+      "step_id": 2,
+      "source_step_sha256": "1d26254444e614d3583ed9a5c8b1838540feb61156e8a2b0359b49122a7ff842",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p2m_copper",
+      "step_id": 3,
+      "source_step_sha256": "681cd1c70789207c9117ac29f921bd9f98195483c4845c3f1003accb98cfcf4b",
+      "candidate_motions": [
+        "electrode_placement",
+        "salt_bridge_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p1m_copper",
+      "step_id": 1,
+      "source_step_sha256": "c200e303c2dbe1ab339a188a5abe48bde79772d4f745918131f37457eeae143c",
+      "candidate_motions": [
+        "electrode_placement"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p1m_copper",
+      "step_id": 2,
+      "source_step_sha256": "1d26254444e614d3583ed9a5c8b1838540feb61156e8a2b0359b49122a7ff842",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p1m_copper",
+      "step_id": 3,
+      "source_step_sha256": "681cd1c70789207c9117ac29f921bd9f98195483c4845c3f1003accb98cfcf4b",
+      "candidate_motions": [
+        "electrode_placement",
+        "salt_bridge_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p05m_copper",
+      "step_id": 1,
+      "source_step_sha256": "b76bd3eb040a823dd8e9eb88456d74938ae675d11cb4d485ed94681b9c3cb807",
+      "candidate_motions": [
+        "electrode_placement"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p05m_copper",
+      "step_id": 2,
+      "source_step_sha256": "1d26254444e614d3583ed9a5c8b1838540feb61156e8a2b0359b49122a7ff842",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p05m_copper",
+      "step_id": 3,
+      "source_step_sha256": "681cd1c70789207c9117ac29f921bd9f98195483c4845c3f1003accb98cfcf4b",
+      "candidate_motions": [
+        "electrode_placement",
+        "salt_bridge_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p025m_copper",
+      "step_id": 1,
+      "source_step_sha256": "622c48599577ba7d2a5d72a6463b859edfbadfcaac7571bc1ff1c8493be7b886",
+      "candidate_motions": [
+        "electrode_placement"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p025m_copper",
+      "step_id": 2,
+      "source_step_sha256": "1d26254444e614d3583ed9a5c8b1838540feb61156e8a2b0359b49122a7ff842",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p025m_copper",
+      "step_id": 3,
+      "source_step_sha256": "681cd1c70789207c9117ac29f921bd9f98195483c4845c3f1003accb98cfcf4b",
+      "candidate_motions": [
+        "electrode_placement",
+        "salt_bridge_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p0125m_copper",
+      "step_id": 1,
+      "source_step_sha256": "9aaec229fa332a97d42d89983acf4004daf26c842c6fe2d03b7e4e060176b3e7",
+      "candidate_motions": [
+        "electrode_placement"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p0125m_copper",
+      "step_id": 2,
+      "source_step_sha256": "1d26254444e614d3583ed9a5c8b1838540feb61156e8a2b0359b49122a7ff842",
+      "candidate_motions": [
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": false,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    },
+    {
+      "experiment_id": "chem_12_1101",
+      "protocol": "0p0125m_copper",
+      "step_id": 3,
+      "source_step_sha256": "681cd1c70789207c9117ac29f921bd9f98195483c4845c3f1003accb98cfcf4b",
+      "candidate_motions": [
+        "electrode_placement",
+        "salt_bridge_placement",
+        "apparatus_wait"
+      ],
+      "requires_new_template": false,
+      "requires_apparatus_fit": true,
+      "requires_topology_validation": true,
+      "status": "suggested_requires_apparatus_fit_and_review"
+    }
+  ],
+  "physics_source_pending": true
+}

@@ -1,0 +1,20 @@
+# Keep the target session's compatible GPU torch + torchvision installation.
+# CPU integration smoke uses the versions recorded in the handoff, not CUDA inference.
+diffusers==0.43.0
+transformers==5.23.0
+accelerate==1.15.0
+safetensors==0.8.0
+omegaconf==2.4.0
+einops==0.8.2
+huggingface_hub==2.4.0
+tokenizers==0.23.3
+sentencepiece
+Pillow
+numpy
+opencv-python
+decord
+imageio
+imageio-ffmpeg
+ftfy
+scipy
+psutil
